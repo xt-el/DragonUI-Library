@@ -1,10 +1,8 @@
 --[[ =====================================================
-     ⚡ Custom Library - Enhanced Version com Layouts Configuráveis e Multi-Dropdown
+     ⚡ Custom Library - Library.lua (Versão Completa)
+     Auto Size + Drag + Notifications + Componentes + Tabs
+     [ATUALIZAÇÃO] Multi-Dropdown Incluído
      Créditos: xtel
-     Atualizações:
-       1. TabStyle (Vertical/Horizontal/None) configurável.
-       2. Primeira aba é ativada automaticamente.
-       3. Novo componente: Multi-Dropdown.
 ===================================================== ]]--
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -75,13 +73,13 @@ local function MakeResizable(frame, minSize, maxSize)
                     local delta = Vector2.new(Mouse.X, Mouse.Y) - initialMouse
                     local newSizeX = math.clamp(
                         initialSize.X.Offset + delta.X,
-                        minSize.X or (ScreenSize.X < 600 and 150 or 300),
-                        maxSize.X or (ScreenSize.X < 600 and ScreenSize.X - 20 or 800)
+                        minSize.X or (ScreenSize.X < 600 and 150 or 200),
+                        maxSize.X or (ScreenSize.X < 600 and ScreenSize.X - 20 or 600)
                     )
                     local newSizeY = math.clamp(
                         initialSize.Y.Offset + delta.Y,
                         minSize.Y or (ScreenSize.Y < 800 and 100 or 150),
-                        maxSize.Y or (ScreenSize.Y < 800 and ScreenSize.Y - 20 or 600)
+                        maxSize.Y or (ScreenSize.Y < 800 and ScreenSize.Y - 20 or 500)
                     )
 
                     frame.Size = UDim2.new(0, newSizeX, 0, newSizeY)
@@ -175,11 +173,9 @@ do
         end)
     end
 end
--- 🧩 Library (Enhanced)
-function Library:CreateWindow(title, config)
-    local cfg = config or {}
-    local tabStyle = cfg.TabStyle or "Vertical" -- Default: Vertical. Options: "Vertical", "Horizontal", "None"
 
+-- 🧩 Library (Enhanced)
+function Library:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CustomUILibrary_" .. #Library.Windows + 1
     ScreenGui.ResetOnSpawn = false
@@ -219,10 +215,7 @@ function Library:CreateWindow(title, config)
     Title.Size = UDim2.new(1, -30, 1, 0)
     Title.Parent = Header
 
-    -- Configuração do layout de abas/conteúdo
-    local TAB_BAR_WIDTH = 120
-    local TAB_BAR_HEIGHT = 30
-
+    -- Contêiner principal para as abas e conteúdo
     local TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
     TabContainer.Size = UDim2.new(1, 0, 1, -30)
@@ -230,178 +223,133 @@ function Library:CreateWindow(title, config)
     TabContainer.BackgroundTransparency = 1
     TabContainer.Parent = MainFrame
 
+    -- Aba lateral esquerda para os botões das abas
     local TabBar = Instance.new("Frame")
     TabBar.Name = "TabBar"
+    TabBar.Size = UDim2.new(0, 120, 1, -20)
+    TabBar.Position = UDim2.new(0, 0, 0, 0)
     TabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
     TabBar.BorderSizePixel = 0
     TabBar.Parent = TabContainer
 
+    local TabList = Instance.new("UIListLayout")
+    TabList.Padding = UDim.new(0, 2)
+    TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Parent = TabBar
+
+    local TabPadding = Instance.new("UIPadding")
+    TabPadding.PaddingTop = UDim.new(0, 5)
+    TabPadding.PaddingBottom = UDim.new(0, 5)
+    TabPadding.Parent = TabBar
+
+    -- Contêiner do Conteúdo das Abas
     local ContentContainer = Instance.new("Frame")
     ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -120, 1, 0)
+    ContentContainer.Position = UDim2.new(0, 120, 0, 0)
     ContentContainer.BackgroundTransparency = 1
     ContentContainer.Parent = TabContainer
 
-    if tabStyle == "Vertical" then
-        TabBar.Size = UDim2.new(0, TAB_BAR_WIDTH, 1, -20)
-        TabBar.Position = UDim2.new(0, 0, 0, 0)
-        ContentContainer.Size = UDim2.new(1, -TAB_BAR_WIDTH, 1, 0)
-        ContentContainer.Position = UDim2.new(0, TAB_BAR_WIDTH, 0, 0)
-        
-        local TabList = Instance.new("UIListLayout")
-        TabList.Padding = UDim.new(0, 2)
-        TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        TabList.SortOrder = Enum.SortOrder.LayoutOrder
-        TabList.Parent = TabBar
-        local TabPadding = Instance.new("UIPadding")
-        TabPadding.PaddingTop = UDim.new(0, 5)
-        TabPadding.PaddingBottom = UDim.new(0, 5)
-        TabPadding.Parent = TabBar
-    elseif tabStyle == "Horizontal" then
-        TabBar.Size = UDim2.new(1, -10, 0, TAB_BAR_HEIGHT)
-        TabBar.Position = UDim2.new(0, 5, 0, 0)
-        ContentContainer.Size = UDim2.new(1, 0, 1, -TAB_BAR_HEIGHT - 10)
-        ContentContainer.Position = UDim2.new(0, 0, 0, TAB_BAR_HEIGHT + 5)
-        
-        local TabList = Instance.new("UIListLayout")
-        TabList.FillDirection = Enum.FillDirection.Horizontal
-        TabList.Padding = UDim.new(0, 5)
-        TabList.HorizontalAlignment = Enum.HorizontalAlignment.Left
-        TabList.SortOrder = Enum.SortOrder.LayoutOrder
-        TabList.Parent = TabBar
-        
-        local Corner = Instance.new("UICorner")
-        Corner.CornerRadius = UDim.new(0, 6)
-        Corner.Parent = TabBar
-
-    elseif tabStyle == "None" then
-        TabBar.Visible = false
-        ContentContainer.Size = UDim2.new(1, 0, 1, -5)
-        ContentContainer.Position = UDim2.new(0, 0, 0, 0)
-        
-        MainFrame.Size = UDim2.new(0, 300, 0, 200) -- Tamanho menor para modo sem abas
-
-    end
-    
     local CurrentTab = nil
     local Tabs = {}
 
-    -- Componentes (Funções dentro da Tab)
-    local function CreateComponentFunctions(contentFrame)
-        local tab = {}
-        local Content = contentFrame
+    -- Minimize Button
+    local Minimize = Instance.new("TextButton")
+    Minimize.Text = "-"
+    Minimize.Font = Enum.Font.GothamBold
+    Minimize.TextColor3 = GetTheme().Text
+    Minimize.TextSize = 20
+    Minimize.BackgroundTransparency = 1
+    Minimize.Size = UDim2.new(0, 30, 1, 0)
+    Minimize.Position = UDim2.new(1, -30, 0, 0)
+    Minimize.Parent = Header
 
-        -- MULTI-DROPDOWN (NOVO)
-        function tab:CreateMultiDropdown(name, options, defaultSelections, callback)
-            local DropFrame = Instance.new("Frame")
-            DropFrame.Size = UDim2.new(1, -10, 0, 30)
-            DropFrame.BackgroundColor3 = GetTheme().Secondary
-            DropFrame.BorderSizePixel = 0
-            DropFrame.ClipsDescendants = true
-            DropFrame.Parent = Content
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 5)
-            Corner.Parent = DropFrame
-            
-            local Label = Instance.new("TextButton")
-            Label.Size = UDim2.new(1, 0, 0, 30)
-            Label.Font = Enum.Font.Gotham
-            Label.TextSize = 14
-            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
-            Label.TextTruncate = Enum.TextTruncate.AtEnd
-            Label.BackgroundTransparency = 1
-            Label.AutoButtonColor = false
-            Label.Parent = DropFrame
-            
-            local Arrow = Instance.new("TextLabel")
-            Arrow.Size = UDim2.new(0, 20, 1, 0)
-            Arrow.Position = UDim2.new(1, -20, 0, 0)
-            Arrow.Text = "▼"
-            Arrow.Font = Enum.Font.GothamBold
-            Arrow.TextSize = 10
-            Arrow.TextColor3 = Color3.fromRGB(150, 150, 155)
-            Arrow.BackgroundTransparency = 1
-            Arrow.Parent = DropFrame
+    local Credit = Instance.new("TextLabel")
+    Credit.Text = "xtel"
+    Credit.Font = Enum.Font.GothamBold
+    Credit.TextSize = 13
+    Credit.TextColor3 = Color3.fromRGB(130, 130, 140)
+    Credit.BackgroundTransparency = 1
+    Credit.Size = UDim2.new(1, 0, 0, 20)
+    Credit.Position = UDim2.new(0, 0, 1, -20)
+    Credit.TextXAlignment = Enum.TextXAlignment.Center
+    Credit.Parent = MainFrame
 
-            local OptionsList = Instance.new("Frame")
-            OptionsList.Size = UDim2.new(1, 0, 0, 0)
-            OptionsList.Position = UDim2.new(0, 0, 0, 30)
-            OptionsList.BackgroundTransparency = 1
-            OptionsList.Parent = DropFrame
-            local OptionsLayout = Instance.new("UIListLayout")
-            OptionsLayout.Parent = OptionsList
-            
-            local isOpen = false
-            local selections = {}
-            for _, v in ipairs(defaultSelections or {}) do
-                selections[v] = true
+    local userResized = false
+    local previousHeight = MainFrame.Size.Y.Offset
+
+    -- Minimize toggle
+    local Collapsed = false
+    Minimize.MouseButton1Click:Connect(function()
+        Collapsed = not Collapsed
+        if Collapsed then
+            previousHeight = MainFrame.Size.Y.Offset
+            TabContainer.Visible = false
+            Credit.Visible = false
+            MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, 30)
+            Minimize.Text = "+"
+            if MainFrame:FindFirstChild("ResizeHandle") then
+                MainFrame.ResizeHandle.Visible = false
             end
-
-            local function updateLabel()
-                local count = 0
-                for _, selected in pairs(selections) do
-                    if selected then count = count + 1 end
-                end
-                if count == 0 then
-                    Label.Text = name .. ": Nada Selecionado"
-                elseif count == 1 then
-                    for key, selected in pairs(selections) do
-                        if selected then Label.Text = name .. ": " .. key; break end
-                    end
-                else
-                    Label.Text = name .. ": " .. count .. " Selecionados"
-                end
+        else
+            TabContainer.Visible = true
+            Credit.Visible = true
+            Minimize.Text = "-"
+            -- Volta ao tamanho anterior
+            MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, previousHeight)
+            if MainFrame:FindFirstChild("ResizeHandle") then
+                MainFrame.ResizeHandle.Visible = true
             end
-            updateLabel()
+        end
+    end)
 
-            for _, option in ipairs(options) do
-                local Opt = Instance.new("TextButton")
-                Opt.Size = UDim2.new(1, 0, 0, 25)
-                Opt.Text = (selections[option] and "☑ " or "☐ ") .. option
-                Opt.Font = Enum.Font.Gotham
-                Opt.TextSize = 13
-                Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
-                Opt.TextTruncate = Enum.TextTruncate.AtEnd
-                Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-                Opt.BorderSizePixel = 0
-                Opt.AutoButtonColor = false
-                Opt.Parent = OptionsList
-                
-                local function toggleOption()
-                    selections[option] = not selections[option]
-                    Opt.Text = (selections[option] and "☑ " or "☐ ") .. option
-                    updateLabel()
-                    
-                    local activeOptions = {}
-                    for opt, selected in pairs(selections) do
-                        if selected then table.insert(activeOptions, opt) end
-                    end
-                    callback(activeOptions)
-                end
-
-                Opt.MouseEnter:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
-                end)
-                Opt.MouseLeave:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-                end)
-                Opt.MouseButton1Click:Connect(toggleOption)
-            end
-
-            Label.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
-                if isOpen then
-                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30 + (#options * 25))}, 0.2)
-                    Arrow.Text = "▲"
-                else
-                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
-                    Arrow.Text = "▼"
-                end
+    -- Drag (PC + Mobile)
+    local dragging = false
+    local dragStart, startPos
+    local function updateDrag(input)
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
-        
-        -- Funções de Componente (existentes, omitidas para concisão do código)
-        -- ... (CreateButton, CreateToggle, CreateSlider, CreateDropdown, etc.)
+    end)
+    Header.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+            updateDrag(input)
+        end
+    end)
 
+    -- Redimensionamento
+    MakeResizable(MainFrame, {X = 300, Y = 150}, {X = 800, Y = 600})
+    -- Marcar como redimensionado pelo usuário no final do resize
+    local resizeHandle = MainFrame:FindFirstChild("ResizeHandle")
+    if resizeHandle then
+        resizeHandle.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                userResized = true
+                previousHeight = MainFrame.Size.Y.Offset
+            end
+        end)
+    end
+
+    -- Adicionar à lista de windows
+    table.insert(Library.Windows, {MainFrame = MainFrame, ScreenGui = ScreenGui})
+
+    -- Componentes (Todos são criados dentro de uma Tab)
+
+    local function CreateComponentFunctions(contentFrame)
+        local tab = {}
+        local Content = contentFrame -- Content é o ScrollingFrame dentro da Tab
+
+        -- Botão padrão
         function tab:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
@@ -427,6 +375,7 @@ function Library:CreateWindow(title, config)
             end)
         end
 
+        -- Toggle
         function tab:CreateToggle(name, default, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -467,6 +416,7 @@ function Library:CreateWindow(title, config)
             }
         end
 
+        -- Slider
         function tab:CreateSlider(name, min, max, default, callback)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Size = UDim2.new(1, -10, 0, 45)
@@ -545,7 +495,8 @@ function Library:CreateWindow(title, config)
                 end
             end)
         end
-        
+
+        -- Dropdown (Single Select)
         function tab:CreateDropdown(name, options, callback)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
@@ -622,7 +573,150 @@ function Library:CreateWindow(title, config)
                 end
             end)
         end
-        
+
+        -- Multi-Dropdown (Multi Select)
+        function tab:CreateMultiDropdown(name, options, default, callback)
+            local DropFrame = Instance.new("Frame")
+            DropFrame.Size = UDim2.new(1, -10, 0, 30)
+            DropFrame.BackgroundColor3 = GetTheme().Secondary
+            DropFrame.BorderSizePixel = 0
+            DropFrame.ClipsDescendants = true
+            DropFrame.Parent = Content
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 5)
+            Corner.Parent = DropFrame
+
+            local selectedOptions = {}
+            -- Inicializa com os defaults
+            for _, def in ipairs(default or {}) do
+                if table.find(options, def) then
+                    table.insert(selectedOptions, def)
+                end
+            end
+
+            local function updateLabel()
+                local text = name .. ": "
+                if #selectedOptions > 0 then
+                    local displayList = {}
+                    for i = 1, math.min(#selectedOptions, 2) do
+                        table.insert(displayList, selectedOptions[i])
+                    end
+
+                    text ..= table.concat(displayList, ", ")
+                    if #selectedOptions > 2 then
+                        text ..= string.format("... (+%d)", #selectedOptions - 2)
+                    end
+                else
+                    text ..= "Nenhum Selecionado"
+                end
+                return text
+            end
+
+            local Label = Instance.new("TextButton")
+            Label.Size = UDim2.new(1, 0, 0, 30)
+            Label.Text = updateLabel()
+            Label.Font = Enum.Font.Gotham
+            Label.TextSize = 14
+            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
+            Label.TextTruncate = Enum.TextTruncate.AtEnd
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.TextWrapped = true
+            Label.BackgroundTransparency = 1
+            Label.AutoButtonColor = false
+            Label.Parent = DropFrame
+
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Size = UDim2.new(0, 20, 1, 0)
+            Arrow.Position = UDim2.new(1, -20, 0, 0)
+            Arrow.Text = "▼"
+            Arrow.Font = Enum.Font.GothamBold
+            Arrow.TextSize = 10
+            Arrow.TextColor3 = Color3.fromRGB(150, 150, 155)
+            Arrow.BackgroundTransparency = 1
+            Arrow.Parent = DropFrame
+
+            local OptionsList = Instance.new("Frame")
+            OptionsList.Size = UDim2.new(1, 0, 0, 0)
+            OptionsList.Position = UDim2.new(0, 0, 0, 30)
+            OptionsList.BackgroundTransparency = 1
+            OptionsList.Parent = DropFrame
+
+            local OptionsLayout = Instance.new("UIListLayout")
+            OptionsLayout.Parent = OptionsList
+
+            local isOpen = false
+            local optionButtons = {}
+
+            for _, option in ipairs(options) do
+                local Opt = Instance.new("TextButton")
+                local isSelected = table.find(selectedOptions, option) ~= nil
+                Opt.Size = UDim2.new(1, 0, 0, 25)
+                Opt.Text = (isSelected and "✔️ " or "") .. option
+                Opt.Font = Enum.Font.Gotham
+                Opt.TextSize = 13
+                Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
+                Opt.TextTruncate = Enum.TextTruncate.AtEnd
+                Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+                Opt.BorderSizePixel = 0
+                Opt.AutoButtonColor = false
+                Opt.Parent = OptionsList
+                optionButtons[option] = Opt
+
+                Opt.MouseEnter:Connect(function()
+                    Opt.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
+                end)
+                Opt.MouseLeave:Connect(function()
+                    Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+                end)
+
+                Opt.MouseButton1Click:Connect(function()
+                    local index = table.find(selectedOptions, option)
+                    if index then
+                        table.remove(selectedOptions, index)
+                        Opt.Text = option
+                    else
+                        table.insert(selectedOptions, option)
+                        Opt.Text = "✔️ " .. option
+                    end
+
+                    Label.Text = updateLabel()
+                    callback(selectedOptions)
+                end)
+            end
+
+            Label.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                if isOpen then
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30 + (#options * 25))}, 0.2)
+                    Arrow.Text = "▲"
+                else
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
+                    Arrow.Text = "▼"
+                end
+            end)
+
+            return {
+                GetSelected = function()
+                    return selectedOptions
+                end,
+                SetSelected = function(newSelection)
+                    selectedOptions = {}
+                    for _, opt in ipairs(options) do
+                        local isSelected = table.find(newSelection, opt) ~= nil
+                        if isSelected then
+                            table.insert(selectedOptions, opt)
+                            optionButtons[opt].Text = "✔️ " .. opt
+                        else
+                            optionButtons[opt].Text = opt
+                        end
+                    end
+                    Label.Text = updateLabel()
+                    if callback then callback(selectedOptions) end
+                end
+            }
+        end
+
+        -- Input de texto
         function tab:CreateTextbox(name, placeholder, callback)
             local TextFrame = Instance.new("Frame")
             TextFrame.Size = UDim2.new(1, -10, 0, 55)
@@ -665,6 +759,7 @@ function Library:CreateWindow(title, config)
             end)
         end
 
+        -- Label
         function tab:CreateLabel(text)
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -10, 0, 20)
@@ -684,7 +779,8 @@ function Library:CreateWindow(title, config)
                 end
             }
         end
-        
+
+        -- Separador
         function tab:CreateSeparator()
             local Separator = Instance.new("Frame")
             Separator.Size = UDim2.new(1, -10, 0, 1)
@@ -692,7 +788,8 @@ function Library:CreateWindow(title, config)
             Separator.BorderSizePixel = 0
             Separator.Parent = Content
         end
-        
+
+        -- Keybind
         function tab:CreateKeybind(name, defaultKey, callback)
             local KeyFrame = Instance.new("Frame")
             KeyFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -742,7 +839,8 @@ function Library:CreateWindow(title, config)
                 end
             end)
         end
-        
+
+        -- Color Picker
         function tab:CreateColorPicker(name, defaultColor, callback)
             local ColorFrame = Instance.new("Frame")
             ColorFrame.Size = UDim2.new(1, -10, 0, 26)
@@ -779,6 +877,7 @@ function Library:CreateWindow(title, config)
             end)
         end
 
+        -- Seção
         function tab:CreateSection(title)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.Size = UDim2.new(1, -10, 0, 35)
@@ -801,6 +900,7 @@ function Library:CreateWindow(title, config)
             SectionTitle.Parent = SectionFrame
         end
 
+        -- Botão Colorido
         function tab:CreateColorButton(name, color, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
@@ -833,6 +933,7 @@ function Library:CreateWindow(title, config)
             end)
         end
 
+        -- Botão com Confirmação
         function tab:CreateConfirmButton(name, confirmText, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
@@ -869,6 +970,7 @@ function Library:CreateWindow(title, config)
             end)
         end
 
+        -- Info Box
         function tab:CreateInfoBox(title, text, color)
             local InfoFrame = Instance.new("Frame")
             InfoFrame.Size = UDim2.new(1, -10, 0, 50)
@@ -902,6 +1004,7 @@ function Library:CreateWindow(title, config)
             InfoText.Parent = InfoFrame
         end
 
+        -- Botão de Copiar
         function tab:CreateCopyButton(name, textToCopy)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
@@ -927,53 +1030,32 @@ function Library:CreateWindow(title, config)
                 NotificationSystem:Notify("Copiado!", textToCopy)
             end)
         end
-        -- Fim das Funções de Componente (existentes)
 
         return tab
     end
 
-    local window = {MainFrame = MainFrame, ScreenGui = ScreenGui} -- Adicionei MainFrame ao retorno
-    local firstTabName = nil
+    local window = {}
 
     function window:CreateTab(name)
-        if tabStyle == "None" then
-            warn("🚨 ERRO: Não é possível criar abas no TabStyle 'None'. Use as funções de componente diretamente na janela (Ex: Window:CreateButton).")
-            NotificationSystem:Notify("Erro de Script", "TabStyle é 'None', não crie abas!", 5)
-            return
-        end
-
-        local isHorizontal = tabStyle == "Horizontal"
-
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "TabButton"
-        TabButton.Size = isHorizontal and UDim2.new(0, 80, 1, 0) or UDim2.new(1, -10, 0, 30)
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
         TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
         TabButton.TextColor3 = Color3.fromRGB(180, 180, 185)
         TabButton.Font = Enum.Font.GothamBold
-        TabButton.TextSize = isHorizontal and 13 or 15
+        TabButton.TextSize = 15
         TabButton.Text = name
         TabButton.AutoButtonColor = false
         TabButton.Parent = TabBar
 
-        if not isHorizontal then
-            local ButtonCorner = Instance.new("UICorner")
-            ButtonCorner.CornerRadius = UDim.new(0, 5)
-            ButtonCorner.Parent = TabButton
-        end
+        local ButtonCorner = Instance.new("UICorner")
+        ButtonCorner.CornerRadius = UDim.new(0, 5)
+        ButtonCorner.Parent = TabButton
 
         local Content = Instance.new("ScrollingFrame")
         Content.Name = name .. "Content"
-        
-        local ContentSize = UDim2.new(1, -10, 1, -10)
-        local ContentPos = UDim2.new(0, 5, 0, 5)
-
-        if isHorizontal then
-            ContentSize = UDim2.new(1, -10, 1, -10)
-            ContentPos = UDim2.new(0, 5, 0, 5)
-        end
-        
-        Content.Size = ContentSize
-        Content.Position = ContentPos
+        Content.Size = UDim2.new(1, -10, 1, -10)
+        Content.Position = UDim2.new(0, 5, 0, 5)
         Content.BackgroundTransparency = 1
         Content.BorderSizePixel = 0
         Content.ScrollBarThickness = 4
@@ -995,6 +1077,7 @@ function Library:CreateWindow(title, config)
         UIPadding.PaddingBottom = UDim.new(0, 5)
         UIPadding.Parent = Content
 
+        -- Auto ajuste de CanvasSize
         UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             Content.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
         end)
@@ -1012,153 +1095,28 @@ function Library:CreateWindow(title, config)
             end
             -- Ativa a nova aba
             Content.Visible = true
-            TabButton.BackgroundColor3 = isHorizontal and Color3.fromRGB(30, 30, 36) or GetTheme().Background
+            TabButton.BackgroundColor3 = GetTheme().Background
             TabButton.TextColor3 = GetTheme().Text
             CurrentTab = name
         end)
 
-        if not firstTabName then
-            firstTabName = name
-            -- Ativa automaticamente a primeira aba
-            task.wait() -- Espera um ciclo para garantir que todos os elementos do tab tenham carregado
+        -- Ativa a primeira aba criada automaticamente
+        if next(Tabs) and not CurrentTab then
             TabButton.MouseButton1Click:Fire()
         end
 
         return tabObject
     end
 
-    -- Modo 'None' - Retorna as funções de componente diretamente na janela
-    if tabStyle == "None" then
-        local Content = Instance.new("ScrollingFrame")
-        Content.Name = "MainContent"
-        Content.Size = UDim2.new(1, -10, 1, -40)
-        Content.Position = UDim2.new(0, 5, 0, 35)
-        Content.BackgroundTransparency = 1
-        Content.BorderSizePixel = 0
-        Content.ScrollBarThickness = 4
-        Content.ScrollBarImageColor3 = GetTheme().Primary
-        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
-        Content.Parent = MainFrame
-        local UIList = Instance.new("UIListLayout")
-        UIList.Padding = UDim.new(0, 8)
-        UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        UIList.SortOrder = Enum.SortOrder.LayoutOrder
-        UIList.Parent = Content
-        local UIPadding = Instance.new("UIPadding")
-        UIPadding.PaddingLeft = UDim.new(0, 10)
-        UIPadding.PaddingRight = UDim.new(0, 10)
-        UIPadding.PaddingTop = UDim.new(0, 5)
-        UIPadding.PaddingBottom = UDim.new(0, 5)
-        UIPadding.Parent = Content
-        UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Content.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
-        end)
-        
-        local noTabFunctions = CreateComponentFunctions(Content)
-        for name, func in pairs(noTabFunctions) do
-            window[name] = func -- Expõe as funções de componente diretamente na janela
+    -- Cria as funções de componente para retornar um erro ou aviso se chamadas na Window diretamente
+    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateMultiDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
+    for _, compName in ipairs(componentNames) do
+        window[compName] = function()
+            warn("🚨 ERRO: Componente '" .. compName .. "' deve ser criado dentro de uma Tab. Use: window:CreateTab('NomeDaTab'):" .. compName .. "()")
+            NotificationSystem:Notify("Erro de Script", "Componente deve ser criado dentro de uma Tab!", 5)
         end
     end
-    
-    -- Funções de Minimizar, Arrastar e Redimensionar (existentes)
-    local Minimize = MainFrame:FindFirstChild("Header"):FindFirstChild("Minimize")
-    -- (O restante do código de minimização, drag, resize, etc. é o mesmo do script original,
-    -- mas está omitido aqui para focar nas mudanças de layout e Multi-Dropdown.
-    -- Ele deve ser mantido no script completo para funcionar.)
-    
-   -- Funções de Minimizar, Arrastar e Redimensionar (existentes)
-    
-    -- Minimize Button
-    local MinimizeButton = Instance.new("TextButton")
-    MinimizeButton.Name = "Minimize"
-    MinimizeButton.Text = "-"
-    MinimizeButton.Font = Enum.Font.GothamBold
-    MinimizeButton.TextColor3 = GetTheme().Text
-    MinimizeButton.TextSize = 20
-    MinimizeButton.BackgroundTransparency = 1
-    MinimizeButton.Size = UDim2.new(0, 30, 1, 0)
-    MinimizeButton.Position = UDim2.new(1, -30, 0, 0)
-    MinimizeButton.Parent = Header -- ✅ AGORA O BOTÃO ESTÁ DEFINIDO NO HEADER
 
-    local Credit = Instance.new("TextLabel")
-    Credit.Text = "xtel"
-    Credit.Font = Enum.Font.GothamBold
-    Credit.TextSize = 13
-    Credit.TextColor3 = Color3.fromRGB(130, 130, 140)
-    Credit.BackgroundTransparency = 1
-    Credit.Size = UDim2.new(1, 0, 0, 20)
-    Credit.Position = UDim2.new(0, 0, 1, -20)
-    Credit.TextXAlignment = Enum.TextXAlignment.Center
-    Credit.Parent = MainFrame
-
-    local userResized = false
-    local previousHeight = MainFrame.Size.Y.Offset
-
-    -- Minimize toggle
-    local Collapsed = false
-    MinimizeButton.MouseButton1Click:Connect(function() -- ✅ MUDAMOS O NOME DA VARIÁVEL PARA 'MinimizeButton'
-        Collapsed = not Collapsed
-        if Collapsed then
-            previousHeight = MainFrame.Size.Y.Offset
-            TabContainer.Visible = false
-            Credit.Visible = false
-            MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, 30)
-            MinimizeButton.Text = "+"
-            if MainFrame:FindFirstChild("ResizeHandle") then
-                MainFrame.ResizeHandle.Visible = false
-            end
-        else
-            TabContainer.Visible = true
-            Credit.Visible = true
-            MinimizeButton.Text = "-"
-            MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, previousHeight)
-            if MainFrame:FindFirstChild("ResizeHandle") then
-                MainFrame.ResizeHandle.Visible = true
-            end
-        end
-    end)
-    
-    -- Drag (PC + Mobile)
-    -- (Resto do código de Drag e Resize...)
-    
-    -- Drag (PC + Mobile)
-    local dragging = false
-    local dragStart, startPos
-    local function updateDrag(input)
-        local delta = input.Position - dragStart
-        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-    Header.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = MainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    Header.InputChanged:Connect(function(input)
-        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
-            updateDrag(input)
-        end
-    end)
-
-    -- Redimensionamento
-    MakeResizable(MainFrame, {X = 300, Y = 150}, {X = 800, Y = 600})
-    
-    local resizeHandle = MainFrame:FindFirstChild("ResizeHandle")
-    if resizeHandle then
-        resizeHandle.InputEnded:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                userResized = true
-                previousHeight = MainFrame.Size.Y.Offset
-            end
-        end)
-    end
-    table.insert(Library.Windows, {MainFrame = MainFrame, ScreenGui = ScreenGui})
-    -- Fim das Funções de UI básicas
-    
     return window
 end
 
