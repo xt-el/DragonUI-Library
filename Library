@@ -1066,17 +1066,20 @@ function Library:CreateWindow(title, config)
     -- mas está omitido aqui para focar nas mudanças de layout e Multi-Dropdown.
     -- Ele deve ser mantido no script completo para funcionar.)
     
-    -- Minimize Button
-    local Minimize = Instance.new("TextButton")
-    Minimize.Text = "-"
-    Minimize.Font = Enum.Font.GothamBold
-    Minimize.TextColor3 = GetTheme().Text
-    Minimize.TextSize = 20
-    Minimize.BackgroundTransparency = 1
-    Minimize.Size = UDim2.new(0, 30, 1, 0)
-    Minimize.Position = UDim2.new(1, -30, 0, 0)
-    Minimize.Parent = Header
+   -- Funções de Minimizar, Arrastar e Redimensionar (existentes)
     
+    -- Minimize Button
+    local MinimizeButton = Instance.new("TextButton")
+    MinimizeButton.Name = "Minimize"
+    MinimizeButton.Text = "-"
+    MinimizeButton.Font = Enum.Font.GothamBold
+    MinimizeButton.TextColor3 = GetTheme().Text
+    MinimizeButton.TextSize = 20
+    MinimizeButton.BackgroundTransparency = 1
+    MinimizeButton.Size = UDim2.new(0, 30, 1, 0)
+    MinimizeButton.Position = UDim2.new(1, -30, 0, 0)
+    MinimizeButton.Parent = Header -- ✅ AGORA O BOTÃO ESTÁ DEFINIDO NO HEADER
+
     local Credit = Instance.new("TextLabel")
     Credit.Text = "xtel"
     Credit.Font = Enum.Font.GothamBold
@@ -1093,27 +1096,30 @@ function Library:CreateWindow(title, config)
 
     -- Minimize toggle
     local Collapsed = false
-    Minimize.MouseButton1Click:Connect(function()
+    MinimizeButton.MouseButton1Click:Connect(function() -- ✅ MUDAMOS O NOME DA VARIÁVEL PARA 'MinimizeButton'
         Collapsed = not Collapsed
         if Collapsed then
             previousHeight = MainFrame.Size.Y.Offset
             TabContainer.Visible = false
             Credit.Visible = false
             MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, 30)
-            Minimize.Text = "+"
+            MinimizeButton.Text = "+"
             if MainFrame:FindFirstChild("ResizeHandle") then
                 MainFrame.ResizeHandle.Visible = false
             end
         else
             TabContainer.Visible = true
             Credit.Visible = true
-            Minimize.Text = "-"
+            MinimizeButton.Text = "-"
             MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, previousHeight)
             if MainFrame:FindFirstChild("ResizeHandle") then
                 MainFrame.ResizeHandle.Visible = true
             end
         end
     end)
+    
+    -- Drag (PC + Mobile)
+    -- (Resto do código de Drag e Resize...)
     
     -- Drag (PC + Mobile)
     local dragging = false
