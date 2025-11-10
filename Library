@@ -332,6 +332,7 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.Gotham
         Button.TextSize = 14
         Button.Text = name
+        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -360,6 +361,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = ToggleFrame
         local Box = Instance.new("TextButton")
@@ -399,6 +401,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = SliderFrame
         local Value = Instance.new("TextLabel")
@@ -480,6 +483,7 @@ function Library:CreateWindow(title)
         Label.Font = Enum.Font.Gotham
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.AutoButtonColor = false
         Label.Parent = DropFrame
@@ -508,6 +512,7 @@ function Library:CreateWindow(title)
             Opt.Font = Enum.Font.Gotham
             Opt.TextSize = 13
             Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
+            Opt.TextTruncate = Enum.TextTruncate.AtEnd
             Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
             Opt.BorderSizePixel = 0
             Opt.AutoButtonColor = false
@@ -551,6 +556,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = TextFrame
         local Input = Instance.new("TextBox")
@@ -588,6 +594,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 13
         Label.TextColor3 = Color3.fromRGB(180, 180, 185)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.TextWrapped = true
         Label.BackgroundTransparency = 1
         Label.Parent = Content
@@ -619,6 +626,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = KeyFrame
         local KeyButton = Instance.new("TextButton")
@@ -666,6 +674,7 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
+        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = ColorFrame
         local ColorBox = Instance.new("TextButton")
@@ -706,6 +715,7 @@ function Library:CreateWindow(title)
         SectionTitle.TextSize = 15
         SectionTitle.TextColor3 = Color3.fromRGB(0, 132, 255)
         SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
+        SectionTitle.TextTruncate = Enum.TextTruncate.AtEnd
         SectionTitle.BackgroundTransparency = 1
         SectionTitle.Parent = SectionFrame
     end
@@ -718,6 +728,7 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
         Button.Text = name
+        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -747,6 +758,7 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
         Button.Text = name
+        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -790,6 +802,7 @@ function Library:CreateWindow(title)
         InfoTitle.TextSize = 14
         InfoTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
         InfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+        InfoTitle.TextTruncate = Enum.TextTruncate.AtEnd
         InfoTitle.BackgroundTransparency = 1
         InfoTitle.Parent = InfoFrame
         local InfoText = Instance.new("TextLabel")
@@ -800,6 +813,7 @@ function Library:CreateWindow(title)
         InfoText.TextSize = 12
         InfoText.TextColor3 = Color3.fromRGB(230, 230, 235)
         InfoText.TextXAlignment = Enum.TextXAlignment.Left
+        InfoText.TextTruncate = Enum.TextTruncate.AtEnd
         InfoText.BackgroundTransparency = 1
         InfoText.Parent = InfoFrame
     end
@@ -812,6 +826,7 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.Gotham
         Button.TextSize = 14
         Button.Text = name .. " 📋"
+        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
