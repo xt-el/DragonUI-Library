@@ -1,7 +1,8 @@
 --[[ =====================================================
-     ⚡ Custom Library - Enhanced Version
-     Auto Size + Mobile/PC Drag + Notifications + More Components
+     ⚡ Custom Library - Enhanced Version com Tabs
+     Auto Size + Mobile/PC Drag + Notifications + Componentes
      Créditos: xtel
+     Atualizações: Sistema de Abas (Tabs) implementado
 ===================================================== ]]--
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -21,8 +22,8 @@ local function GetTheme()
         Primary = Color3.fromRGB(0, 132, 255),
         Text = Color3.fromRGB(255, 255, 255),
         Background = Color3.fromRGB(27, 27, 33),
-        TabBackground = Color3.fromRGB(35, 35, 35),
-        TabSelected = Color3.fromRGB(45, 45, 45),
+        Secondary = Color3.fromRGB(35, 35, 42),
+        Hover = Color3.fromRGB(48, 48, 56),
     }
 end
 
@@ -45,27 +46,27 @@ local function MakeResizable(frame, minSize, maxSize)
     resizeButton.TextSize = 18
     resizeButton.Font = Enum.Font.GothamBold
     resizeButton.ZIndex = 1000
-   
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(0, 4)
     corner.Parent = resizeButton
-   
+
     resizeButton.MouseEnter:Connect(function()
         CreateTween(resizeButton, {BackgroundTransparency = 0.2}, 0.2)
     end)
-   
+
     resizeButton.MouseLeave:Connect(function()
         if not resizing then
             CreateTween(resizeButton, {BackgroundTransparency = 0.5}, 0.2)
         end
     end)
-   
+
     resizeButton.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             resizing = true
             local initialSize = frame.Size
             local initialMouse = Vector2.new(Mouse.X, Mouse.Y)
-           
+
             local connection
             connection = RunService.Heartbeat:Connect(function()
                 if resizing then
@@ -80,13 +81,13 @@ local function MakeResizable(frame, minSize, maxSize)
                         minSize.Y or (ScreenSize.Y < 800 and 100 or 150),
                         maxSize.Y or (ScreenSize.Y < 800 and ScreenSize.Y - 20 or 500)
                     )
-                   
+
                     frame.Size = UDim2.new(0, newSizeX, 0, newSizeY)
                 else
                     connection:Disconnect()
                 end
             end)
-           
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     resizing = false
@@ -110,7 +111,7 @@ do
         Background = Color3.fromRGB(35, 35, 35),
         Text = Color3.fromRGB(255, 255, 255),
         SubText = Color3.fromRGB(200, 200, 200),
-        Accent = Color3.fromRGB(45, 150, 255)
+        Accent = Color3.fromRGB(0, 132, 255)
     }
     local function Tween(obj, goal, time)
         TweenService:Create(obj, TweenInfo.new(time or 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), goal):Play()
@@ -181,8 +182,8 @@ function Library:CreateWindow(title)
     ScreenGui.Parent = CoreGui
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 200, 0, 80)
-    MainFrame.Position = UDim2.new(0.05 + 0.2 * #Library.Windows, 0, 0.25, 0)
+    MainFrame.Size = UDim2.new(0, 450, 0, 300) -- Aumentei o tamanho padrão
+    MainFrame.Position = UDim2.new(0.05 + 0.02 * #Library.Windows, 0, 0.25 + 0.02 * #Library.Windows, 0)
     MainFrame.BackgroundColor3 = GetTheme().Background
     MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
@@ -202,16 +203,57 @@ function Library:CreateWindow(title)
     Header.BackgroundColor3 = GetTheme().Primary
     Header.BorderSizePixel = 0
     Header.Parent = MainFrame
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Text = " " .. title
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.TextColor3 = GetTheme().Text
-    TitleLabel.TextSize = 15
-    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    TitleLabel.TextTruncate = Enum.TextTruncate.AtEnd
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Size = UDim2.new(1, -30, 1, 0)
-    TitleLabel.Parent = Header
+    local Title = Instance.new("TextLabel")
+    Title.Text = " " .. title
+    Title.Font = Enum.Font.GothamBold
+    Title.TextColor3 = GetTheme().Text
+    Title.TextSize = 15
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.TextTruncate = Enum.TextTruncate.AtEnd
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, -30, 1, 0)
+    Title.Parent = Header
+
+    -- Contêiner principal para as abas e conteúdo
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Name = "TabContainer"
+    TabContainer.Size = UDim2.new(1, 0, 1, -30) -- Ocupa o restante da janela
+    TabContainer.Position = UDim2.new(0, 0, 0, 30)
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.Parent = MainFrame
+
+    -- Aba lateral esquerda para os botões das abas
+    local TabBar = Instance.new("Frame")
+    TabBar.Name = "TabBar"
+    TabBar.Size = UDim2.new(0, 120, 1, -20)
+    TabBar.Position = UDim2.new(0, 0, 0, 0)
+    TabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    TabBar.BorderSizePixel = 0
+    TabBar.Parent = TabContainer
+
+    local TabList = Instance.new("UIListLayout")
+    TabList.Padding = UDim.new(0, 2)
+    TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    TabList.SortOrder = Enum.SortOrder.LayoutOrder
+    TabList.Parent = TabBar
+
+    local TabPadding = Instance.new("UIPadding")
+    TabPadding.PaddingTop = UDim.new(0, 5)
+    TabPadding.PaddingBottom = UDim.new(0, 5)
+    TabPadding.Parent = TabBar
+
+    -- Contêiner do Conteúdo das Abas
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -120, 1, 0)
+    ContentContainer.Position = UDim2.new(0, 120, 0, 0)
+    ContentContainer.BackgroundTransparency = 1
+    ContentContainer.Parent = TabContainer
+
+    local CurrentTab = nil
+    local Tabs = {}
+
+    -- Minimize Button
     local Minimize = Instance.new("TextButton")
     Minimize.Text = "-"
     Minimize.Font = Enum.Font.GothamBold
@@ -221,23 +263,7 @@ function Library:CreateWindow(title)
     Minimize.Size = UDim2.new(0, 30, 1, 0)
     Minimize.Position = UDim2.new(1, -30, 0, 0)
     Minimize.Parent = Header
-    local TabContainer = Instance.new("Frame")
-    TabContainer.Size = UDim2.new(1, 0, 0, 30)
-    TabContainer.Position = UDim2.new(0, 0, 0, 30)
-    TabContainer.BackgroundColor3 = GetTheme().TabBackground
-    TabContainer.BorderSizePixel = 0
-    TabContainer.Parent = MainFrame
-    local TabList = Instance.new("UIListLayout")
-    TabList.FillDirection = Enum.FillDirection.Horizontal
-    TabList.SortOrder = Enum.SortOrder.LayoutOrder
-    TabList.Padding = UDim.new(0, 0)
-    TabList.Parent = TabContainer
-    local ContentContainer = Instance.new("Frame")
-    ContentContainer.Size = UDim2.new(1, 0, 1, -60)
-    ContentContainer.Position = UDim2.new(0, 0, 0, 60)
-    ContentContainer.BackgroundTransparency = 1
-    ContentContainer.ClipsDescendants = true
-    ContentContainer.Parent = MainFrame
+
     local Credit = Instance.new("TextLabel")
     Credit.Text = "xtel"
     Credit.Font = Enum.Font.GothamBold
@@ -248,10 +274,10 @@ function Library:CreateWindow(title)
     Credit.Position = UDim2.new(0, 0, 1, -20)
     Credit.TextXAlignment = Enum.TextXAlignment.Center
     Credit.Parent = MainFrame
-    local tabs = {}
-    local activeTab = nil
+
     local userResized = false
-    local previousHeight = 80
+    local previousHeight = MainFrame.Size.Y.Offset
+
     -- Minimize toggle
     local Collapsed = false
     Minimize.MouseButton1Click:Connect(function()
@@ -259,7 +285,6 @@ function Library:CreateWindow(title)
         if Collapsed then
             previousHeight = MainFrame.Size.Y.Offset
             TabContainer.Visible = false
-            ContentContainer.Visible = false
             Credit.Visible = false
             MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, 30)
             Minimize.Text = "+"
@@ -268,20 +293,16 @@ function Library:CreateWindow(title)
             end
         else
             TabContainer.Visible = true
-            ContentContainer.Visible = true
             Credit.Visible = true
             Minimize.Text = "-"
-            if userResized then
-                MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, previousHeight)
-            else
-                local totalHeight = 60 + math.min(activeTab and activeTab.UIList.AbsoluteContentSize.Y + 20 or 0, 400)
-                MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, totalHeight)
-            end
+            -- Volta ao tamanho anterior
+            MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, previousHeight)
             if MainFrame:FindFirstChild("ResizeHandle") then
                 MainFrame.ResizeHandle.Visible = true
             end
         end
     end)
+
     -- Drag (PC + Mobile)
     local dragging = false
     local dragStart, startPos
@@ -304,112 +325,61 @@ function Library:CreateWindow(title)
             updateDrag(input)
         end
     end)
+
     -- Redimensionamento
-    MakeResizable(MainFrame, {X = 150, Y = 50}, {X = 500, Y = 500})
+    MakeResizable(MainFrame, {X = 300, Y = 150}, {X = 800, Y = 600}) -- Ajustei os limites
     -- Marcar como redimensionado pelo usuário no final do resize
     local resizeHandle = MainFrame:FindFirstChild("ResizeHandle")
     if resizeHandle then
         resizeHandle.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 userResized = true
+                previousHeight = MainFrame.Size.Y.Offset
             end
         end)
     end
+
     -- Adicionar à lista de windows
     table.insert(Library.Windows, {MainFrame = MainFrame, ScreenGui = ScreenGui})
-    local window = {}
-    function window:CreateTab(tabName)
-        local TabButton = Instance.new("TextButton")
-        TabButton.Text = tabName
-        TabButton.Font = Enum.Font.GothamBold
-        TabButton.TextSize = 14
-        TabButton.TextColor3 = GetTheme().Text
-        TabButton.BackgroundColor3 = GetTheme().TabBackground
-        TabButton.BorderSizePixel = 0
-        TabButton.AutoButtonColor = false
-        TabButton.Parent = TabContainer
-        local TabContent = Instance.new("ScrollingFrame")
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.Position = UDim2.new(0, 0, 0, 0)
-        TabContent.BackgroundTransparency = 1
-        TabContent.BorderSizePixel = 0
-        TabContent.ScrollBarThickness = 4
-        TabContent.ScrollBarImageColor3 = GetTheme().Primary
-        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabContent.Visible = false
-        TabContent.Parent = ContentContainer
-        local UIList = Instance.new("UIListLayout")
-        UIList.Padding = UDim.new(0, 8)
-        UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
-        UIList.SortOrder = Enum.SortOrder.LayoutOrder
-        UIList.Parent = TabContent
-        local UIPadding = Instance.new("UIPadding")
-        UIPadding.PaddingLeft = UDim.new(0, 10)
-        UIPadding.PaddingRight = UDim.new(0, 10)
-        UIPadding.PaddingTop = UDim.new(0, 5)
-        UIPadding.PaddingBottom = UDim.new(0, 5)
-        UIPadding.Parent = TabContent
-        table.insert(tabs, {Button = TabButton, Content = TabContent, UIList = UIList})
-        local numTabs = #tabs
-        for _, t in ipairs(tabs) do
-            t.Button.Size = UDim2.new(1/numTabs, 0, 1, 0)
-        end
-        TabButton.MouseButton1Click:Connect(function()
-            for _, t in ipairs(tabs) do
-                t.Content.Visible = false
-                t.Button.BackgroundColor3 = GetTheme().TabBackground
-            end
-            TabContent.Visible = true
-            TabButton.BackgroundColor3 = GetTheme().TabSelected
-            activeTab = {Content = TabContent, UIList = UIList}
-            if not Collapsed and not userResized then
-                local totalHeight = 60 + math.min(UIList.AbsoluteContentSize.Y + 20, 400)
-                MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, totalHeight)
-            end
-        end)
-        UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
-            if activeTab and activeTab.Content == TabContent and not Collapsed and not userResized then
-                local totalHeight = 60 + math.min(UIList.AbsoluteContentSize.Y + 20, 400)
-                MainFrame.Size = UDim2.new(0, MainFrame.Size.X.Offset, 0, totalHeight)
-            end
-        end)
-        if #tabs == 1 then
-            TabButton.BackgroundColor3 = GetTheme().TabSelected
-            TabContent.Visible = true
-            activeTab = {Content = TabContent, UIList = UIList}
-        end
+
+    -- Componentes (Todos são criados dentro de uma Tab)
+
+    local function CreateComponentFunctions(contentFrame)
         local tab = {}
-        -- Componentes para o tab (implemente todos)
+        local Content = contentFrame -- Content é o ScrollingFrame dentro da Tab
+
+        -- Botão padrão
         function tab:CreateButton(name, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
-            Button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            Button.BackgroundColor3 = GetTheme().Secondary
             Button.TextColor3 = Color3.fromRGB(230, 230, 235)
             Button.Font = Enum.Font.Gotham
             Button.TextSize = 14
             Button.Text = name
             Button.TextTruncate = Enum.TextTruncate.AtEnd
             Button.AutoButtonColor = false
-            Button.Parent = TabContent
+            Button.Parent = Content
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = Button
             Button.MouseEnter:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(48, 48, 56)
+                CreateTween(Button, {BackgroundColor3 = GetTheme().Hover}, 0.15)
             end)
             Button.MouseLeave:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+                CreateTween(Button, {BackgroundColor3 = GetTheme().Secondary}, 0.15)
             end)
             Button.MouseButton1Click:Connect(function()
                 if callback then callback() end
             end)
         end
+
+        -- Toggle
         function tab:CreateToggle(name, default, callback)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Size = UDim2.new(1, -10, 0, 26)
             ToggleFrame.BackgroundTransparency = 1
-            ToggleFrame.Parent = TabContent
+            ToggleFrame.Parent = Content
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -40, 1, 0)
             Label.Text = name
@@ -433,22 +403,24 @@ function Library:CreateWindow(title)
             local active = default or false
             Box.MouseButton1Click:Connect(function()
                 active = not active
-                Box.BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)
+                CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)}, 0.15)
                 callback(active)
             end)
-           
+
             return {
                 SetValue = function(value)
                     active = value
-                    Box.BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)
+                    CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)}, 0.15)
                 end
             }
         end
+
+        -- Slider
         function tab:CreateSlider(name, min, max, default, callback)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Size = UDim2.new(1, -10, 0, 45)
             SliderFrame.BackgroundTransparency = 1
-            SliderFrame.Parent = TabContent
+            SliderFrame.Parent = Content
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, 0, 0, 18)
             Label.Text = name
@@ -479,7 +451,8 @@ function Library:CreateWindow(title)
             TrackCorner.CornerRadius = UDim.new(0, 2)
             TrackCorner.Parent = Track
             local Fill = Instance.new("Frame")
-            Fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+            local defaultPos = math.min(math.max((default - min) / (max - min), 0), 1)
+            Fill.Size = UDim2.new(defaultPos, 0, 1, 0)
             Fill.BackgroundColor3 = GetTheme().Primary
             Fill.BorderSizePixel = 0
             Fill.Parent = Track
@@ -488,7 +461,7 @@ function Library:CreateWindow(title)
             FillCorner.Parent = Fill
             local Thumb = Instance.new("Frame")
             Thumb.Size = UDim2.new(0, 12, 0, 12)
-            Thumb.Position = UDim2.new((default - min) / (max - min), -6, 0.5, -6)
+            Thumb.Position = UDim2.new(defaultPos, -6, 0.5, -6)
             Thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
             Thumb.BorderSizePixel = 0
             Thumb.Parent = Track
@@ -521,13 +494,15 @@ function Library:CreateWindow(title)
                 end
             end)
         end
+
+        -- Dropdown
         function tab:CreateDropdown(name, options, callback)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
-            DropFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            DropFrame.BackgroundColor3 = GetTheme().Secondary
             DropFrame.BorderSizePixel = 0
             DropFrame.ClipsDescendants = true
-            DropFrame.Parent = TabContent
+            DropFrame.Parent = Content
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = DropFrame
@@ -581,27 +556,29 @@ function Library:CreateWindow(title)
                     selected = option
                     Label.Text = name .. ": " .. option
                     isOpen = false
-                    DropFrame.Size = UDim2.new(1, -10, 0, 30)
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
                     Arrow.Text = "▼"
                     callback(option)
-                end
+                end)
             end
             Label.MouseButton1Click:Connect(function()
                 isOpen = not isOpen
                 if isOpen then
-                    DropFrame.Size = UDim2.new(1, -10, 0, 30 + (#options * 25))
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30 + (#options * 25))}, 0.2)
                     Arrow.Text = "▲"
                 else
-                    DropFrame.Size = UDim2.new(1, -10, 0, 30)
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
                     Arrow.Text = "▼"
                 end
             end)
         end
+
+        -- Input de texto
         function tab:CreateTextbox(name, placeholder, callback)
             local TextFrame = Instance.new("Frame")
             TextFrame.Size = UDim2.new(1, -10, 0, 55)
             TextFrame.BackgroundTransparency = 1
-            TextFrame.Parent = TabContent
+            TextFrame.Parent = Content
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, 0, 0, 18)
             Label.Text = name
@@ -615,7 +592,7 @@ function Library:CreateWindow(title)
             local Input = Instance.new("TextBox")
             Input.Size = UDim2.new(1, 0, 0, 30)
             Input.Position = UDim2.new(0, 0, 1, -30)
-            Input.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            Input.BackgroundColor3 = GetTheme().Secondary
             Input.TextColor3 = Color3.fromRGB(230, 230, 235)
             Input.PlaceholderText = placeholder or "Digite aqui..."
             Input.PlaceholderColor3 = Color3.fromRGB(120, 120, 125)
@@ -638,6 +615,8 @@ function Library:CreateWindow(title)
                 end
             end)
         end
+
+        -- Label
         function tab:CreateLabel(text)
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -10, 0, 20)
@@ -649,26 +628,30 @@ function Library:CreateWindow(title)
             Label.TextTruncate = Enum.TextTruncate.AtEnd
             Label.TextWrapped = true
             Label.BackgroundTransparency = 1
-            Label.Parent = TabContent
-           
+            Label.Parent = Content
+
             return {
                 SetText = function(newText)
                     Label.Text = newText
                 end
             }
         end
+
+        -- Separador
         function tab:CreateSeparator()
             local Separator = Instance.new("Frame")
             Separator.Size = UDim2.new(1, -10, 0, 1)
             Separator.BackgroundColor3 = Color3.fromRGB(50, 50, 58)
             Separator.BorderSizePixel = 0
-            Separator.Parent = TabContent
+            Separator.Parent = Content
         end
+
+        -- Keybind
         function tab:CreateKeybind(name, defaultKey, callback)
             local KeyFrame = Instance.new("Frame")
             KeyFrame.Size = UDim2.new(1, -10, 0, 26)
             KeyFrame.BackgroundTransparency = 1
-            KeyFrame.Parent = TabContent
+            KeyFrame.Parent = Content
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -80, 1, 0)
             Label.Text = name
@@ -697,6 +680,7 @@ function Library:CreateWindow(title)
             KeyButton.MouseButton1Click:Connect(function()
                 binding = true
                 KeyButton.Text = "..."
+                CreateTween(KeyButton, {BackgroundColor3 = GetTheme().Primary}, 0.15)
             end)
             UserInputService.InputBegan:Connect(function(input, processed)
                 if binding and not processed then
@@ -704,6 +688,7 @@ function Library:CreateWindow(title)
                         currentKey = input.KeyCode
                         KeyButton.Text = currentKey.Name
                         binding = false
+                        CreateTween(KeyButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 50)}, 0.15)
                         NotificationSystem:Notify(name, "Tecla alterada para: " .. currentKey.Name)
                     end
                 elseif not processed and input.KeyCode == currentKey then
@@ -711,11 +696,13 @@ function Library:CreateWindow(title)
                 end
             end)
         end
+
+        -- Color Picker
         function tab:CreateColorPicker(name, defaultColor, callback)
             local ColorFrame = Instance.new("Frame")
             ColorFrame.Size = UDim2.new(1, -10, 0, 26)
             ColorFrame.BackgroundTransparency = 1
-            ColorFrame.Parent = TabContent
+            ColorFrame.Parent = Content
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -40, 1, 0)
             Label.Text = name
@@ -746,12 +733,14 @@ function Library:CreateWindow(title)
                 NotificationSystem:Notify(name, string.format("RGB(%d, %d, %d)", r, g, b))
             end)
         end
+
+        -- Seção
         function tab:CreateSection(title)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.Size = UDim2.new(1, -10, 0, 35)
             SectionFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
             SectionFrame.BorderSizePixel = 0
-            SectionFrame.Parent = TabContent
+            SectionFrame.Parent = Content
             local SectionCorner = Instance.new("UICorner")
             SectionCorner.CornerRadius = UDim.new(0, 6)
             SectionCorner.Parent = SectionFrame
@@ -767,75 +756,84 @@ function Library:CreateWindow(title)
             SectionTitle.BackgroundTransparency = 1
             SectionTitle.Parent = SectionFrame
         end
+
+        -- Botão Colorido
         function tab:CreateColorButton(name, color, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = color
-            Button.TextColor3 = GetTheme().Text
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.Font = Enum.Font.GothamBold
             Button.TextSize = 14
             Button.Text = name
             Button.TextTruncate = Enum.TextTruncate.AtEnd
             Button.AutoButtonColor = false
-            Button.Parent = TabContent
+            Button.Parent = Content
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = Button
             local originalColor = color
             Button.MouseEnter:Connect(function()
-                Button.BackgroundColor3 = Color3.new(
-                    math.min(originalColor.R + 0.1, 1),
-                    math.min(originalColor.G + 0.1, 1),
-                    math.min(originalColor.B + 0.1, 1)
-                )
+                CreateTween(Button, {
+                    BackgroundColor3 = Color3.new(
+                        math.min(originalColor.R + 0.1, 1),
+                        math.min(originalColor.G + 0.1, 1),
+                        math.min(originalColor.B + 0.1, 1)
+                    )
+                }, 0.15)
             end)
             Button.MouseLeave:Connect(function()
-                Button.BackgroundColor3 = originalColor
+                CreateTween(Button, {BackgroundColor3 = originalColor}, 0.15)
             end)
             Button.MouseButton1Click:Connect(function()
                 if callback then callback() end
             end)
         end
+
+        -- Botão com Confirmação
         function tab:CreateConfirmButton(name, confirmText, callback)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
-            Button.TextColor3 = GetTheme().Text
+            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
             Button.Font = Enum.Font.GothamBold
             Button.TextSize = 14
             Button.Text = name
             Button.TextTruncate = Enum.TextTruncate.AtEnd
             Button.AutoButtonColor = false
-            Button.Parent = TabContent
+            Button.Parent = Content
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = Button
             local confirming = false
+            local originalColor = Color3.fromRGB(200, 60, 60)
             Button.MouseButton1Click:Connect(function()
                 if not confirming then
                     confirming = true
                     Button.Text = confirmText or "Confirmar?"
-                    Button.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+                    CreateTween(Button, {BackgroundColor3 = Color3.fromRGB(220, 80, 80)}, 0.15)
                     task.wait(2)
-                    if confirming then
+                    if confirming then -- Checa novamente se o tempo expirou sem o segundo clique
+                        CreateTween(Button, {BackgroundColor3 = originalColor}, 0.15)
                         Button.Text = name
-                        Button.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
                         confirming = false
                     end
                 else
                     if callback then callback() end
+                    CreateTween(Button, {BackgroundColor3 = originalColor}, 0.15)
                     Button.Text = name
-                    Button.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
                     confirming = false
                 end
             end)
         end
+
+        -- Info Box
         function tab:CreateInfoBox(title, text, color)
             local InfoFrame = Instance.new("Frame")
             InfoFrame.Size = UDim2.new(1, -10, 0, 50)
             InfoFrame.BackgroundColor3 = color or Color3.fromRGB(40, 100, 160)
             InfoFrame.BorderSizePixel = 0
-            InfoFrame.Parent = TabContent
+            InfoFrame.Parent = Content
             local InfoCorner = Instance.new("UICorner")
             InfoCorner.CornerRadius = UDim.new(0, 6)
             InfoCorner.Parent = InfoFrame
@@ -845,7 +843,7 @@ function Library:CreateWindow(title)
             InfoTitle.Text = title
             InfoTitle.Font = Enum.Font.GothamBold
             InfoTitle.TextSize = 14
-            InfoTitle.TextColor3 = GetTheme().Text
+            InfoTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
             InfoTitle.TextXAlignment = Enum.TextXAlignment.Left
             InfoTitle.TextTruncate = Enum.TextTruncate.AtEnd
             InfoTitle.BackgroundTransparency = 1
@@ -862,39 +860,128 @@ function Library:CreateWindow(title)
             InfoText.BackgroundTransparency = 1
             InfoText.Parent = InfoFrame
         end
+
+        -- Botão de Copiar
         function tab:CreateCopyButton(name, textToCopy)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
-            Button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+            Button.BackgroundColor3 = GetTheme().Secondary
             Button.TextColor3 = Color3.fromRGB(230, 230, 235)
             Button.Font = Enum.Font.Gotham
             Button.TextSize = 14
             Button.Text = name .. " 📋"
             Button.TextTruncate = Enum.TextTruncate.AtEnd
             Button.AutoButtonColor = false
-            Button.Parent = TabContent
+            Button.Parent = Content
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = Button
             Button.MouseEnter:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(48, 48, 56)
+                CreateTween(Button, {BackgroundColor3 = GetTheme().Hover}, 0.15)
             end)
             Button.MouseLeave:Connect(function()
-                Button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+                CreateTween(Button, {BackgroundColor3 = GetTheme().Secondary}, 0.15)
             end)
             Button.MouseButton1Click:Connect(function()
                 setclipboard(textToCopy)
                 NotificationSystem:Notify("Copiado!", textToCopy)
             end)
         end
+
         return tab
     end
+
+    local window = {}
+
+    function window:CreateTab(name)
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = name .. "TabButton"
+        TabButton.Size = UDim2.new(1, -10, 0, 30)
+        TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        TabButton.TextColor3 = Color3.fromRGB(180, 180, 185)
+        TabButton.Font = Enum.Font.GothamBold
+        TabButton.TextSize = 15
+        TabButton.Text = name
+        TabButton.AutoButtonColor = false
+        TabButton.Parent = TabBar
+
+        local ButtonCorner = Instance.new("UICorner")
+        ButtonCorner.CornerRadius = UDim.new(0, 5)
+        ButtonCorner.Parent = TabButton
+
+        local Content = Instance.new("ScrollingFrame")
+        Content.Name = name .. "Content"
+        Content.Size = UDim2.new(1, -10, 1, -10)
+        Content.Position = UDim2.new(0, 5, 0, 5)
+        Content.BackgroundTransparency = 1
+        Content.BorderSizePixel = 0
+        Content.ScrollBarThickness = 4
+        Content.ScrollBarImageColor3 = GetTheme().Primary
+        Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+        Content.Parent = ContentContainer
+        Content.Visible = false -- Oculta por padrão
+
+        local UIList = Instance.new("UIListLayout")
+        UIList.Padding = UDim.new(0, 8)
+        UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        UIList.SortOrder = Enum.SortOrder.LayoutOrder
+        UIList.Parent = Content
+
+        local UIPadding = Instance.new("UIPadding")
+        UIPadding.PaddingLeft = UDim.new(0, 10)
+        UIPadding.PaddingRight = UDim.new(0, 10)
+        UIPadding.PaddingTop = UDim.new(0, 5)
+        UIPadding.PaddingBottom = UDim.new(0, 5)
+        UIPadding.Parent = Content
+
+        -- Auto ajuste de CanvasSize
+        UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Content.CanvasSize = UDim2.new(0, 0, 0, UIList.AbsoluteContentSize.Y + 10)
+        end)
+
+        local tabObject = CreateComponentFunctions(Content)
+        Tabs[name] = {Button = TabButton, Content = Content, Object = tabObject}
+
+        TabButton.MouseButton1Click:Connect(function()
+            if CurrentTab == name then return end
+            -- Desativa a aba atual
+            if CurrentTab and Tabs[CurrentTab] then
+                Tabs[CurrentTab].Content.Visible = false
+                Tabs[CurrentTab].Button.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                Tabs[CurrentTab].Button.TextColor3 = Color3.fromRGB(180, 180, 185)
+            end
+            -- Ativa a nova aba
+            Content.Visible = true
+            TabButton.BackgroundColor3 = GetTheme().Background
+            TabButton.TextColor3 = GetTheme().Text
+            CurrentTab = name
+        end)
+
+        -- Ativa a primeira aba criada automaticamente
+        if #Tabs == 1 then
+            TabButton.MouseButton1Click:Fire()
+        end
+
+        return tabObject
+    end
+
+    -- Cria as funções de componente para retornar um erro ou aviso se chamadas na Window diretamente
+    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
+    for _, compName in ipairs(componentNames) do
+        window[compName] = function()
+            warn("🚨 ERRO: Componente '" .. compName .. "' deve ser criado dentro de uma Tab. Use: window:CreateTab('NomeDaTab'):" .. compName .. "()")
+            NotificationSystem:Notify("Erro de Script", "Componente deve ser criado dentro de uma Tab!", 5)
+        end
+    end
+
     return window
 end
+
 -- Função de notificação externa
 function Library:Notify(title, message, duration)
     if NotificationSystem and NotificationSystem.Notify then
         NotificationSystem:Notify(title, message, duration)
     end
 end
+
 return Library
