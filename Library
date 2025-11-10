@@ -1,8 +1,8 @@
 --[[ =====================================================
-     ⚡ Custom Library - Library.lua (Versão Completa)
-     Auto Size + Drag + Notifications + Componentes + Tabs
-     [ATUALIZAÇÃO] Multi-Dropdown Incluído
+     ⚡ Custom Library - Enhanced Version com Tabs
+     Auto Size + Mobile/PC Drag + Notifications + Componentes
      Créditos: xtel
+     Atualizações: Sistema de Abas (Tabs) implementado
 ===================================================== ]]--
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -41,7 +41,7 @@ local function MakeResizable(frame, minSize, maxSize)
     resizeButton.BorderSizePixel = 0
     resizeButton.Position = UDim2.new(1, -20, 1, -20)
     resizeButton.Size = UDim2.new(0, 20, 0, 20)
-    resizeButton.Text = "↘"
+    resizeButton.Text = "↘" -- Ícone melhorado para redimensionar
     resizeButton.TextColor3 = GetTheme().Text
     resizeButton.TextSize = 18
     resizeButton.Font = Enum.Font.GothamBold
@@ -173,7 +173,6 @@ do
         end)
     end
 end
-
 -- 🧩 Library (Enhanced)
 function Library:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
@@ -183,7 +182,7 @@ function Library:CreateWindow(title)
     ScreenGui.Parent = CoreGui
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 450, 0, 300)
+    MainFrame.Size = UDim2.new(0, 450, 0, 300) -- Aumentei o tamanho padrão
     MainFrame.Position = UDim2.new(0.05 + 0.02 * #Library.Windows, 0, 0.25 + 0.02 * #Library.Windows, 0)
     MainFrame.BackgroundColor3 = GetTheme().Background
     MainFrame.BorderSizePixel = 0
@@ -218,7 +217,7 @@ function Library:CreateWindow(title)
     -- Contêiner principal para as abas e conteúdo
     local TabContainer = Instance.new("Frame")
     TabContainer.Name = "TabContainer"
-    TabContainer.Size = UDim2.new(1, 0, 1, -30)
+    TabContainer.Size = UDim2.new(1, 0, 1, -30) -- Ocupa o restante da janela
     TabContainer.Position = UDim2.new(0, 0, 0, 30)
     TabContainer.BackgroundTransparency = 1
     TabContainer.Parent = MainFrame
@@ -328,7 +327,7 @@ function Library:CreateWindow(title)
     end)
 
     -- Redimensionamento
-    MakeResizable(MainFrame, {X = 300, Y = 150}, {X = 800, Y = 600})
+    MakeResizable(MainFrame, {X = 300, Y = 150}, {X = 800, Y = 600}) -- Ajustei os limites
     -- Marcar como redimensionado pelo usuário no final do resize
     local resizeHandle = MainFrame:FindFirstChild("ResizeHandle")
     if resizeHandle then
@@ -496,7 +495,7 @@ function Library:CreateWindow(title)
             end)
         end
 
-        -- Dropdown (Single Select)
+        -- Dropdown
         function tab:CreateDropdown(name, options, callback)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
@@ -572,148 +571,6 @@ function Library:CreateWindow(title)
                     Arrow.Text = "▼"
                 end
             end)
-        end
-
-        -- Multi-Dropdown (Multi Select)
-        function tab:CreateMultiDropdown(name, options, default, callback)
-            local DropFrame = Instance.new("Frame")
-            DropFrame.Size = UDim2.new(1, -10, 0, 30)
-            DropFrame.BackgroundColor3 = GetTheme().Secondary
-            DropFrame.BorderSizePixel = 0
-            DropFrame.ClipsDescendants = true
-            DropFrame.Parent = Content
-            local Corner = Instance.new("UICorner")
-            Corner.CornerRadius = UDim.new(0, 5)
-            Corner.Parent = DropFrame
-
-            local selectedOptions = {}
-            -- Inicializa com os defaults
-            for _, def in ipairs(default or {}) do
-                if table.find(options, def) then
-                    table.insert(selectedOptions, def)
-                end
-            end
-
-            local function updateLabel()
-                local text = name .. ": "
-                if #selectedOptions > 0 then
-                    local displayList = {}
-                    for i = 1, math.min(#selectedOptions, 2) do
-                        table.insert(displayList, selectedOptions[i])
-                    end
-
-                    text ..= table.concat(displayList, ", ")
-                    if #selectedOptions > 2 then
-                        text ..= string.format("... (+%d)", #selectedOptions - 2)
-                    end
-                else
-                    text ..= "Nenhum Selecionado"
-                end
-                return text
-            end
-
-            local Label = Instance.new("TextButton")
-            Label.Size = UDim2.new(1, 0, 0, 30)
-            Label.Text = updateLabel()
-            Label.Font = Enum.Font.Gotham
-            Label.TextSize = 14
-            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
-            Label.TextTruncate = Enum.TextTruncate.AtEnd
-            Label.TextXAlignment = Enum.TextXAlignment.Left
-            Label.TextWrapped = true
-            Label.BackgroundTransparency = 1
-            Label.AutoButtonColor = false
-            Label.Parent = DropFrame
-
-            local Arrow = Instance.new("TextLabel")
-            Arrow.Size = UDim2.new(0, 20, 1, 0)
-            Arrow.Position = UDim2.new(1, -20, 0, 0)
-            Arrow.Text = "▼"
-            Arrow.Font = Enum.Font.GothamBold
-            Arrow.TextSize = 10
-            Arrow.TextColor3 = Color3.fromRGB(150, 150, 155)
-            Arrow.BackgroundTransparency = 1
-            Arrow.Parent = DropFrame
-
-            local OptionsList = Instance.new("Frame")
-            OptionsList.Size = UDim2.new(1, 0, 0, 0)
-            OptionsList.Position = UDim2.new(0, 0, 0, 30)
-            OptionsList.BackgroundTransparency = 1
-            OptionsList.Parent = DropFrame
-
-            local OptionsLayout = Instance.new("UIListLayout")
-            OptionsLayout.Parent = OptionsList
-
-            local isOpen = false
-            local optionButtons = {}
-
-            for _, option in ipairs(options) do
-                local Opt = Instance.new("TextButton")
-                local isSelected = table.find(selectedOptions, option) ~= nil
-                Opt.Size = UDim2.new(1, 0, 0, 25)
-                Opt.Text = (isSelected and "✔️ " or "") .. option
-                Opt.Font = Enum.Font.Gotham
-                Opt.TextSize = 13
-                Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
-                Opt.TextTruncate = Enum.TextTruncate.AtEnd
-                Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-                Opt.BorderSizePixel = 0
-                Opt.AutoButtonColor = false
-                Opt.Parent = OptionsList
-                optionButtons[option] = Opt
-
-                Opt.MouseEnter:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
-                end)
-                Opt.MouseLeave:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
-                end)
-
-                Opt.MouseButton1Click:Connect(function()
-                    local index = table.find(selectedOptions, option)
-                    if index then
-                        table.remove(selectedOptions, index)
-                        Opt.Text = option
-                    else
-                        table.insert(selectedOptions, option)
-                        Opt.Text = "✔️ " .. option
-                    end
-
-                    Label.Text = updateLabel()
-                    callback(selectedOptions)
-                end)
-            end
-
-            Label.MouseButton1Click:Connect(function()
-                isOpen = not isOpen
-                if isOpen then
-                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30 + (#options * 25))}, 0.2)
-                    Arrow.Text = "▲"
-                else
-                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
-                    Arrow.Text = "▼"
-                end
-            end)
-
-            return {
-                GetSelected = function()
-                    return selectedOptions
-                end,
-                SetSelected = function(newSelection)
-                    selectedOptions = {}
-                    for _, opt in ipairs(options) do
-                        local isSelected = table.find(newSelection, opt) ~= nil
-                        if isSelected then
-                            table.insert(selectedOptions, opt)
-                            optionButtons[opt].Text = "✔️ " .. opt
-                        else
-                            optionButtons[opt].Text = opt
-                        end
-                    end
-                    Label.Text = updateLabel()
-                    if callback then callback(selectedOptions) end
-                end
-            }
         end
 
         -- Input de texto
@@ -956,7 +813,7 @@ function Library:CreateWindow(title)
                     Button.Text = confirmText or "Confirmar?"
                     CreateTween(Button, {BackgroundColor3 = Color3.fromRGB(220, 80, 80)}, 0.15)
                     task.wait(2)
-                    if confirming then
+                    if confirming then -- Checa novamente se o tempo expirou sem o segundo clique
                         CreateTween(Button, {BackgroundColor3 = originalColor}, 0.15)
                         Button.Text = name
                         confirming = false
@@ -1062,7 +919,7 @@ function Library:CreateWindow(title)
         Content.ScrollBarImageColor3 = GetTheme().Primary
         Content.CanvasSize = UDim2.new(0, 0, 0, 0)
         Content.Parent = ContentContainer
-        Content.Visible = false
+        Content.Visible = false -- Oculta por padrão
 
         local UIList = Instance.new("UIListLayout")
         UIList.Padding = UDim.new(0, 8)
@@ -1101,7 +958,7 @@ function Library:CreateWindow(title)
         end)
 
         -- Ativa a primeira aba criada automaticamente
-        if next(Tabs) and not CurrentTab then
+        if #Tabs == 1 then
             TabButton.MouseButton1Click:Fire()
         end
 
@@ -1109,7 +966,7 @@ function Library:CreateWindow(title)
     end
 
     -- Cria as funções de componente para retornar um erro ou aviso se chamadas na Window diretamente
-    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateMultiDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
+    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
     for _, compName in ipairs(componentNames) do
         window[compName] = function()
             warn("🚨 ERRO: Componente '" .. compName .. "' deve ser criado dentro de uma Tab. Use: window:CreateTab('NomeDaTab'):" .. compName .. "()")
