@@ -1,3 +1,272 @@
+-- Components.lua
+local Components = {}
+
+local function CreateCorner(parent, radius)
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, radius or 5)
+    c.Parent = parent
+end
+
+function Components:CreateButton(parent, name, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1,-10,0,30)
+    btn.BackgroundColor3 = Library.CurrentTheme.Button
+    btn.Text = name
+    btn.TextColor3 = Library.CurrentTheme.Text
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 14
+    btn.TextTruncate = Enum.TextTruncate.AtEnd
+    btn.AutoButtonColor = false
+    btn.Parent = parent
+    CreateCorner(btn)
+
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Library.CurrentTheme.ButtonHover end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Library.CurrentTheme.Button end)
+    btn.MouseButton1Click:Connect(callback or function() end)
+    return btn
+end
+
+function Components:CreateToggle(parent, name, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1,-10,0,26)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,-50,1,0)
+    label.Text = name
+    label.TextColor3 = Library.CurrentTheme.Text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.TextTruncate = Enum.TextTruncate.AtEnd
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+
+    local box = Instance.new("TextButton")
+    box.Size = UDim2.new(0,22,0,22)
+    box.Position = UDim2.new(1,-28,0.5,-11)
+    box.BackgroundColor3 = default and Library.CurrentTheme.Primary or Library.CurrentTheme.Border
+    box.Text = ""
+    box.Parent = frame
+    CreateCorner(box, 4)
+
+    local active = default
+    box.MouseButton1Click:Connect(function()
+        active = not active
+        box.BackgroundColor3 = active and Library.CurrentTheme.Primary or Library.CurrentTheme.Border
+        callback(active)
+    end)
+
+    return {Set = function(v) active = v; box.BackgroundColor3 = v and Library.CurrentTheme.Primary or Library.CurrentTheme.Border end}
+end
+
+function Components:CreateCheckbox(parent, name, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1,-10,0,26)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,-35,1,0)
+    label.Text = name
+    label.TextColor3 = Library.CurrentTheme.Text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+
+    local check = Instance.new("ImageLabel")
+    check.Size = UDim2.new(0,22,0,22)
+    check.Position = UDim2.new(1,-28,0.5,-11)
+    check.BackgroundColor3 = Library.CurrentTheme.Border
+    check.Image = default and "rbxassetid://3926305904" or ""
+    check.ImageRectOffset = Vector2.new(644, 404)
+    check.ImageRectSize = Vector2.new(80, 80)
+    check.ScaleType = Enum.ScaleType.Fit
+    check.Parent = frame
+    CreateCorner(check, 4)
+
+    local active = default
+    check.MouseButton1Click:Connect(function()
+        active = not active
+        check.Image = active and "rbxassetid://3926305904" or ""
+        callback(active)
+    end)
+end
+
+function Components:CreateMultiDropdown(parent, name, options, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1,-10,0,30)
+    frame.BackgroundColor3 = Library.CurrentTheme.Button
+    frame.Parent = parent
+    CreateCorner(frame)
+
+    local label = Instance.new("TextButton")
+    label.Size = UDim2.new(1,0,1,0)
+    label.BackgroundTransparency = 1
+    label.Text = name..": None"
+    label.TextColor3 = Library.CurrentTheme.Text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 14
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = frame
+
+    local arrow = Instance.new("TextLabel")
+    arrow.Size = UDim2.new(0,20,1,0)
+    arrow.Position = UDim2.new(1,-20,0,0)
+    arrow.Text = "▼"
+    arrow.TextColor3 = Library.CurrentTheme.SubText
+    arrow.BackgroundTransparency = 1
+    arrow.Parent = frame
+
+    local list = Instance.new("Frame")
+    list.Size = UDim2.new(1,0,0,0)
+    list.Position = UDim2.new(0,0,1,0)
+    list.BackgroundTransparency = 1
+    list.Parent = frame
+    list.ClipsDescendants = true
+
+    local layout = Instance.new("UIListLayout", list)
+
+    local selected = {}
+    local open = false
+
+    for _, opt in ipairs(options) do
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1,0,0,25)
+        btn.BackgroundColor3 = Library.CurrentTheme.Section
+        btn.Text = opt
+        btn.TextColor3 = Library.CurrentTheme.Text
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 13
+        btn.Parent = list
+        btn.MouseButton1Click:Connect(function()
+            if table.find(selected, opt) then
+                table.remove(selected, table.find(selected, opt))
+            else
+                table.insert(selected, opt)
+            end
+            btn.BackgroundColor3 = table.find(selected, opt) and Library.CurrentTheme.Primary or Library.CurrentTheme.Section
+            callback(selected)
+            label.Text = name..": "..(#selected > 0 and table.concat(selected, ", ") or "None")
+        end)
+    end
+
+    label.MouseButton1Click:Connect(function()
+        open = not open
+        frame.Size = open and UDim2.new(1,-10,0,30 + #options*25) or UDim2.new(1,-10,0,30)
+        arrow.Text = open and "▲" or "▼"
+    end)
+end
+
+function Components:CreateProgressBar(parent, name, value)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1,-10,0,25)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1,0,0,14)
+    label.Text = name
+    label.TextColor3 = Library.CurrentTheme.Text
+    label.Font = Enum.Font.Gotham
+    label.TextSize = 13
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.BackgroundTransparency = 1
+    label.Parent = frame
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1,0,0,6)
+    bar.Position = UDim2.new(0,0,1,-8)
+    bar.BackgroundColor3 = Library.CurrentTheme.Border
+    bar.Parent = frame
+    CreateCorner(bar, 3)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(value/100,0,1,0)
+    fill.BackgroundColor3 = Library.CurrentTheme.Primary
+    fill.Parent = bar
+    CreateCorner(fill, 3)
+
+    local percent = Instance.new("TextLabel")
+    percent.Size = UDim2.new(0,40,0,14)
+    percent.Position = UDim2.new(1,-40,0,0)
+    percent.Text = value.."%"
+    percent.TextColor3 = Library.CurrentTheme.Primary
+    percent.Font = Enum.Font.GothamBold
+    percent.TextSize = 12
+    percent.BackgroundTransparency = 1
+    percent.Parent = frame
+
+    return {
+        Set = function(v)
+            value = math.clamp(v,0,100)
+            fill.Size = UDim2.new(value/100,0,1,0)
+            percent.Text = value.."%"
+        end
+    }
+end
+
+function Components:CreateIconButton(parent, iconId, size, callback)
+    local btn = Instance.new("ImageButton")
+    btn.Size = size or UDim2.new(0,30,0,30)
+    btn.BackgroundColor3 = Library.CurrentTheme.Button
+    btn.Image = "rbxassetid://"..iconId
+    btn.Parent = parent
+    CreateCorner(btn)
+
+    btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Library.CurrentTheme.ButtonHover end)
+    btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Library.CurrentTheme.Button end)
+    btn.MouseButton1Click:Connect(callback or function() end)
+    return btn
+end
+
+function Components:CreateCollapsibleSection(parent, title)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1,-10,0,35)
+    frame.BackgroundColor3 = Library.CurrentTheme.Section
+    frame.Parent = parent
+    CreateCorner(frame, 6)
+
+    local header = Instance.new("TextButton")
+    header.Size = UDim2.new(1,0,0,35)
+    header.BackgroundTransparency = 1
+    header.Text = "▶ "..title
+    header.TextColor3 = Library.CurrentTheme.Primary
+    header.Font = Enum.Font.GothamBold
+    header.TextSize = 15
+    header.TextXAlignment = Enum.TextXAlignment.Left
+    header.Parent = frame
+
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1,0,0,0)
+    content.Position = UDim2.new(0,0,0,35)
+    content.BackgroundTransparency = 1
+    content.ClipsDescendants = true
+    content.Parent = frame
+
+    local open = false
+    header.MouseButton1Click:Connect(function()
+        open = not open
+        header.Text = (open and "▼" or "▶").." "..title
+        frame.Size = open and UDim2.new(1,-10,0,35 + content.AbsoluteSize.Y) or UDim2.new(1,-10,0,35)
+    end)
+
+    return setmetatable({}, {
+        __index = function(_, k)
+            if k == "Content" then return content end
+            local comp = Components
+            return function(...)
+                return comp[k](content, ...)
+            end
+        end
+    })
+end
+
+return Components
+``````lua
 --[[ =====================================================
      ⚡ Custom Library - Enhanced Version
      Auto Size + Mobile/PC Drag + Notifications + More Components
@@ -170,6 +439,7 @@ do
     end
 end
 -- 🧩 Library (Enhanced)
+local Library = {}
 function Library:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "CustomUILibrary_" .. #Library.Windows + 1
@@ -205,7 +475,6 @@ function Library:CreateWindow(title)
     Title.TextColor3 = Color3.fromRGB(255, 255, 255)
     Title.TextSize = 15
     Title.TextXAlignment = Enum.TextXAlignment.Left
-    Title.TextTruncate = Enum.TextTruncate.AtEnd
     Title.BackgroundTransparency = 1
     Title.Size = UDim2.new(1, -30, 1, 0)
     Title.Parent = Header
@@ -332,7 +601,6 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.Gotham
         Button.TextSize = 14
         Button.Text = name
-        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -361,7 +629,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = ToggleFrame
         local Box = Instance.new("TextButton")
@@ -401,7 +668,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = SliderFrame
         local Value = Instance.new("TextLabel")
@@ -483,7 +749,6 @@ function Library:CreateWindow(title)
         Label.Font = Enum.Font.Gotham
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.AutoButtonColor = false
         Label.Parent = DropFrame
@@ -512,7 +777,6 @@ function Library:CreateWindow(title)
             Opt.Font = Enum.Font.Gotham
             Opt.TextSize = 13
             Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
-            Opt.TextTruncate = Enum.TextTruncate.AtEnd
             Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
             Opt.BorderSizePixel = 0
             Opt.AutoButtonColor = false
@@ -530,7 +794,7 @@ function Library:CreateWindow(title)
                 DropFrame.Size = UDim2.new(1, -10, 0, 30)
                 Arrow.Text = "▼"
                 callback(option)
-            end)
+            end
         end
         Label.MouseButton1Click:Connect(function()
             isOpen = not isOpen
@@ -556,7 +820,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = TextFrame
         local Input = Instance.new("TextBox")
@@ -594,7 +857,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 13
         Label.TextColor3 = Color3.fromRGB(180, 180, 185)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.TextWrapped = true
         Label.BackgroundTransparency = 1
         Label.Parent = Content
@@ -626,7 +888,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = KeyFrame
         local KeyButton = Instance.new("TextButton")
@@ -674,7 +935,6 @@ function Library:CreateWindow(title)
         Label.TextSize = 14
         Label.TextColor3 = Color3.fromRGB(230, 230, 235)
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.TextTruncate = Enum.TextTruncate.AtEnd
         Label.BackgroundTransparency = 1
         Label.Parent = ColorFrame
         local ColorBox = Instance.new("TextButton")
@@ -715,7 +975,6 @@ function Library:CreateWindow(title)
         SectionTitle.TextSize = 15
         SectionTitle.TextColor3 = Color3.fromRGB(0, 132, 255)
         SectionTitle.TextXAlignment = Enum.TextXAlignment.Left
-        SectionTitle.TextTruncate = Enum.TextTruncate.AtEnd
         SectionTitle.BackgroundTransparency = 1
         SectionTitle.Parent = SectionFrame
     end
@@ -728,7 +987,6 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
         Button.Text = name
-        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -758,7 +1016,6 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.GothamBold
         Button.TextSize = 14
         Button.Text = name
-        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
@@ -802,7 +1059,6 @@ function Library:CreateWindow(title)
         InfoTitle.TextSize = 14
         InfoTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
         InfoTitle.TextXAlignment = Enum.TextXAlignment.Left
-        InfoTitle.TextTruncate = Enum.TextTruncate.AtEnd
         InfoTitle.BackgroundTransparency = 1
         InfoTitle.Parent = InfoFrame
         local InfoText = Instance.new("TextLabel")
@@ -813,7 +1069,6 @@ function Library:CreateWindow(title)
         InfoText.TextSize = 12
         InfoText.TextColor3 = Color3.fromRGB(230, 230, 235)
         InfoText.TextXAlignment = Enum.TextXAlignment.Left
-        InfoText.TextTruncate = Enum.TextTruncate.AtEnd
         InfoText.BackgroundTransparency = 1
         InfoText.Parent = InfoFrame
     end
@@ -826,7 +1081,6 @@ function Library:CreateWindow(title)
         Button.Font = Enum.Font.Gotham
         Button.TextSize = 14
         Button.Text = name .. " 📋"
-        Button.TextTruncate = Enum.TextTruncate.AtEnd
         Button.AutoButtonColor = false
         Button.Parent = Content
         local Corner = Instance.new("UICorner")
