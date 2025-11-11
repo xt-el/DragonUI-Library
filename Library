@@ -2,7 +2,9 @@
      ⚡ Custom Library - Enhanced Version com Tabs
      Auto Size + Mobile/PC Drag + Notifications + Componentes
      Créditos: xtel
-     Atualizações: Sistema de Abas (Tabs) implementado
+     Atualizações: 
+     - Primeira tab aberta automaticamente
+     - Multi-Dropdown para seleção múltipla
 ===================================================== ]]--
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -495,7 +497,7 @@ function Library:CreateWindow(title)
             end)
         end
 
-        -- Dropdown
+        -- Dropdown (Seleção Única)
         function tab:CreateDropdown(name, options, callback)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
@@ -506,6 +508,7 @@ function Library:CreateWindow(title)
             local Corner = Instance.new("UICorner")
             Corner.CornerRadius = UDim.new(0, 5)
             Corner.Parent = DropFrame
+            
             local Label = Instance.new("TextButton")
             Label.Size = UDim2.new(1, 0, 0, 30)
             Label.Text = name .. ": " .. (options[1] or "None")
@@ -516,6 +519,7 @@ function Library:CreateWindow(title)
             Label.BackgroundTransparency = 1
             Label.AutoButtonColor = false
             Label.Parent = DropFrame
+            
             local Arrow = Instance.new("TextLabel")
             Arrow.Size = UDim2.new(0, 20, 1, 0)
             Arrow.Position = UDim2.new(1, -20, 0, 0)
@@ -525,15 +529,19 @@ function Library:CreateWindow(title)
             Arrow.TextColor3 = Color3.fromRGB(150, 150, 155)
             Arrow.BackgroundTransparency = 1
             Arrow.Parent = DropFrame
+            
             local OptionsList = Instance.new("Frame")
             OptionsList.Size = UDim2.new(1, 0, 0, 0)
             OptionsList.Position = UDim2.new(0, 0, 0, 30)
             OptionsList.BackgroundTransparency = 1
             OptionsList.Parent = DropFrame
+            
             local OptionsLayout = Instance.new("UIListLayout")
             OptionsLayout.Parent = OptionsList
+            
             local isOpen = false
             local selected = options[1]
+            
             for _, option in ipairs(options) do
                 local Opt = Instance.new("TextButton")
                 Opt.Size = UDim2.new(1, 0, 0, 25)
@@ -546,12 +554,15 @@ function Library:CreateWindow(title)
                 Opt.BorderSizePixel = 0
                 Opt.AutoButtonColor = false
                 Opt.Parent = OptionsList
+                
                 Opt.MouseEnter:Connect(function()
                     Opt.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
                 end)
+                
                 Opt.MouseLeave:Connect(function()
                     Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
                 end)
+                
                 Opt.MouseButton1Click:Connect(function()
                     selected = option
                     Label.Text = name .. ": " .. option
@@ -561,6 +572,7 @@ function Library:CreateWindow(title)
                     callback(option)
                 end)
             end
+            
             Label.MouseButton1Click:Connect(function()
                 isOpen = not isOpen
                 if isOpen then
@@ -571,6 +583,169 @@ function Library:CreateWindow(title)
                     Arrow.Text = "▼"
                 end
             end)
+        end
+
+        -- Multi-Dropdown (Seleção Múltipla)
+        function tab:CreateMultiDropdown(name, options, callback)
+            local DropFrame = Instance.new("Frame")
+            DropFrame.Size = UDim2.new(1, -10, 0, 30)
+            DropFrame.BackgroundColor3 = GetTheme().Secondary
+            DropFrame.BorderSizePixel = 0
+            DropFrame.ClipsDescendants = true
+            DropFrame.Parent = Content
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 5)
+            Corner.Parent = DropFrame
+            
+            local Label = Instance.new("TextButton")
+            Label.Size = UDim2.new(1, 0, 0, 30)
+            Label.Text = name .. ": Nenhum"
+            Label.Font = Enum.Font.Gotham
+            Label.TextSize = 14
+            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
+            Label.TextTruncate = Enum.TextTruncate.AtEnd
+            Label.BackgroundTransparency = 1
+            Label.AutoButtonColor = false
+            Label.Parent = DropFrame
+            
+            local Arrow = Instance.new("TextLabel")
+            Arrow.Size = UDim2.new(0, 20, 1, 0)
+            Arrow.Position = UDim2.new(1, -20, 0, 0)
+            Arrow.Text = "▼"
+            Arrow.Font = Enum.Font.GothamBold
+            Arrow.TextSize = 10
+            Arrow.TextColor3 = Color3.fromRGB(150, 150, 155)
+            Arrow.BackgroundTransparency = 1
+            Arrow.Parent = DropFrame
+            
+            local OptionsList = Instance.new("Frame")
+            OptionsList.Size = UDim2.new(1, 0, 0, 0)
+            OptionsList.Position = UDim2.new(0, 0, 0, 30)
+            OptionsList.BackgroundTransparency = 1
+            OptionsList.Parent = DropFrame
+            
+            local OptionsLayout = Instance.new("UIListLayout")
+            OptionsLayout.Parent = OptionsList
+            
+            local isOpen = false
+            local selected = {}
+            
+            -- Função para atualizar o texto do label
+            local function updateLabel()
+                if #selected == 0 then
+                    Label.Text = name .. ": Nenhum"
+                elseif #selected == 1 then
+                    Label.Text = name .. ": " .. selected[1]
+                else
+                    Label.Text = name .. ": " .. #selected .. " selecionados"
+                end
+            end
+            
+            for _, option in ipairs(options) do
+                local OptionFrame = Instance.new("Frame")
+                OptionFrame.Size = UDim2.new(1, 0, 0, 25)
+                OptionFrame.BackgroundTransparency = 1
+                OptionFrame.Parent = OptionsList
+                
+                local Checkbox = Instance.new("TextButton")
+                Checkbox.Size = UDim2.new(0, 20, 0, 20)
+                Checkbox.Position = UDim2.new(0, 5, 0.5, -10)
+                Checkbox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                Checkbox.Text = ""
+                Checkbox.AutoButtonColor = false
+                Checkbox.Parent = OptionFrame
+                
+                local CheckboxCorner = Instance.new("UICorner")
+                CheckboxCorner.CornerRadius = UDim.new(0, 4)
+                CheckboxCorner.Parent = Checkbox
+                
+                local Checkmark = Instance.new("TextLabel")
+                Checkmark.Size = UDim2.new(1, 0, 1, 0)
+                Checkmark.Text = "✓"
+                Checkmark.Font = Enum.Font.GothamBold
+                Checkmark.TextSize = 14
+                Checkmark.TextColor3 = GetTheme().Primary
+                Checkmark.BackgroundTransparency = 1
+                Checkmark.Visible = false
+                Checkmark.Parent = Checkbox
+                
+                local OptionLabel = Instance.new("TextButton")
+                OptionLabel.Size = UDim2.new(1, -30, 1, 0)
+                OptionLabel.Position = UDim2.new(0, 30, 0, 0)
+                OptionLabel.Text = option
+                OptionLabel.Font = Enum.Font.Gotham
+                OptionLabel.TextSize = 13
+                OptionLabel.TextColor3 = Color3.fromRGB(200, 200, 205)
+                OptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+                OptionLabel.TextTruncate = Enum.TextTruncate.AtEnd
+                OptionLabel.BackgroundTransparency = 1
+                OptionLabel.AutoButtonColor = false
+                OptionLabel.Parent = OptionFrame
+                
+                local function toggleOption()
+                    local isSelected = table.find(selected, option)
+                    if isSelected then
+                        table.remove(selected, isSelected)
+                        Checkmark.Visible = false
+                        CreateTween(Checkbox, {BackgroundColor3 = Color3.fromRGB(45, 45, 50)}, 0.15)
+                    else
+                        table.insert(selected, option)
+                        Checkmark.Visible = true
+                        CreateTween(Checkbox, {BackgroundColor3 = GetTheme().Primary}, 0.15)
+                    end
+                    updateLabel()
+                    callback(selected)
+                end
+                
+                Checkbox.MouseButton1Click:Connect(toggleOption)
+                OptionLabel.MouseButton1Click:Connect(toggleOption)
+                
+                OptionLabel.MouseEnter:Connect(function()
+                    OptionLabel.TextColor3 = Color3.fromRGB(230, 230, 235)
+                end)
+                
+                OptionLabel.MouseLeave:Connect(function()
+                    OptionLabel.TextColor3 = Color3.fromRGB(200, 200, 205)
+                end)
+            end
+            
+            Label.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                if isOpen then
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30 + (#options * 25))}, 0.2)
+                    Arrow.Text = "▲"
+                else
+                    CreateTween(DropFrame, {Size = UDim2.new(1, -10, 0, 30)}, 0.2)
+                    Arrow.Text = "▼"
+                end
+            end)
+            
+            updateLabel()
+            
+            return {
+                SetValues = function(values)
+                    selected = values or {}
+                    -- Atualiza visualmente as opções selecionadas
+                    for _, child in ipairs(OptionsList:GetChildren()) do
+                        if child:IsA("Frame") and child:FindFirstChild("TextButton") then
+                            local optionText = child:FindFirstChild("TextButton").Text
+                            local checkbox = child:FindFirstChild("TextButton")
+                            local checkmark = checkbox and checkbox:FindFirstChild("TextLabel")
+                            
+                            if checkmark then
+                                local isSelected = table.find(selected, optionText)
+                                checkmark.Visible = isSelected ~= nil
+                                checkbox.BackgroundColor3 = isSelected and GetTheme().Primary or Color3.fromRGB(45, 45, 50)
+                            end
+                        end
+                    end
+                    updateLabel()
+                end,
+                
+                GetValues = function()
+                    return selected
+                end
+            }
         end
 
         -- Input de texto
@@ -959,14 +1134,17 @@ function Library:CreateWindow(title)
 
         -- Ativa a primeira aba criada automaticamente
         if #Tabs == 1 then
-            TabButton.MouseButton1Click:Fire()
+            CurrentTab = name
+            Content.Visible = true
+            TabButton.BackgroundColor3 = GetTheme().Background
+            TabButton.TextColor3 = GetTheme().Text
         end
 
         return tabObject
     end
 
     -- Cria as funções de componente para retornar um erro ou aviso se chamadas na Window diretamente
-    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
+    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateMultiDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
     for _, compName in ipairs(componentNames) do
         window[compName] = function()
             warn("🚨 ERRO: Componente '" .. compName .. "' deve ser criado dentro de uma Tab. Use: window:CreateTab('NomeDaTab'):" .. compName .. "()")
