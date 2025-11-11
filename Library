@@ -5,6 +5,8 @@
      Atualizações: 
      - Primeira tab aberta automaticamente
      - Multi-Dropdown para seleção múltipla
+     - Sistema de Temas personalizáveis via GUI
+     - Sistema de Tooltips configurável
 ===================================================== ]]--
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -18,19 +20,185 @@ local ScreenSize = workspace.CurrentCamera.ViewportSize
 
 local Library = {}
 Library.Windows = {}
-
-local function GetTheme()
-    return {
+Library.Themes = {
+    Dark = {
         Primary = Color3.fromRGB(0, 132, 255),
         Text = Color3.fromRGB(255, 255, 255),
         Background = Color3.fromRGB(27, 27, 33),
         Secondary = Color3.fromRGB(35, 35, 42),
         Hover = Color3.fromRGB(48, 48, 56),
+        Accent = Color3.fromRGB(0, 132, 255),
+        Border = Color3.fromRGB(50, 50, 58)
+    },
+    Light = {
+        Primary = Color3.fromRGB(0, 100, 255),
+        Text = Color3.fromRGB(30, 30, 30),
+        Background = Color3.fromRGB(240, 240, 245),
+        Secondary = Color3.fromRGB(220, 220, 225),
+        Hover = Color3.fromRGB(200, 200, 210),
+        Accent = Color3.fromRGB(0, 100, 255),
+        Border = Color3.fromRGB(180, 180, 190)
+    },
+    Purple = {
+        Primary = Color3.fromRGB(138, 43, 226),
+        Text = Color3.fromRGB(255, 255, 255),
+        Background = Color3.fromRGB(35, 25, 45),
+        Secondary = Color3.fromRGB(50, 35, 65),
+        Hover = Color3.fromRGB(65, 45, 85),
+        Accent = Color3.fromRGB(147, 112, 219),
+        Border = Color3.fromRGB(70, 50, 90)
+    },
+    Green = {
+        Primary = Color3.fromRGB(46, 204, 113),
+        Text = Color3.fromRGB(255, 255, 255),
+        Background = Color3.fromRGB(25, 35, 30),
+        Secondary = Color3.fromRGB(35, 50, 40),
+        Hover = Color3.fromRGB(45, 65, 50),
+        Accent = Color3.fromRGB(39, 174, 96),
+        Border = Color3.fromRGB(55, 75, 60)
+    },
+    Red = {
+        Primary = Color3.fromRGB(231, 76, 60),
+        Text = Color3.fromRGB(255, 255, 255),
+        Background = Color3.fromRGB(45, 25, 25),
+        Secondary = Color3.fromRGB(65, 35, 35),
+        Hover = Color3.fromRGB(85, 45, 45),
+        Accent = Color3.fromRGB(192, 57, 43),
+        Border = Color3.fromRGB(95, 55, 55)
     }
+}
+Library.CurrentTheme = "Dark"
+Library.TooltipsEnabled = true -- Configuração global de tooltips
+
+local function GetTheme()
+    return Library.Themes[Library.CurrentTheme] or Library.Themes["Dark"]
 end
 
 local function CreateTween(obj, goal, time)
     TweenService:Create(obj, TweenInfo.new(time or 0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), goal):Play()
+end
+
+-- 🔧 Sistema de Tooltips Melhorado
+local TooltipSystem = {}
+do
+    local TooltipGui = Instance.new("ScreenGui")
+    TooltipGui.Name = "TooltipSystem"
+    TooltipGui.Parent = CoreGui
+    TooltipGui.ResetOnSpawn = false
+    TooltipGui.ZIndexBehavior = Enum.ZIndexBehavior.Global -- Garante que fique acima de tudo
+    TooltipGui.DisplayOrder = 9999 -- Ordem de exibição muito alta
+    
+    local TooltipFrame = Instance.new("Frame")
+    TooltipFrame.Name = "TooltipFrame"
+    TooltipFrame.Size = UDim2.new(0, 200, 0, 0)
+    TooltipFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    TooltipFrame.BorderSizePixel = 0
+    TooltipFrame.Visible = false
+    TooltipFrame.ZIndex = 10000
+    TooltipFrame.Parent = TooltipGui
+    
+    local TooltipCorner = Instance.new("UICorner")
+    TooltipCorner.CornerRadius = UDim.new(0, 6)
+    TooltipCorner.Parent = TooltipFrame
+    
+    local TooltipShadow = Instance.new("ImageLabel")
+    TooltipShadow.Image = "rbxassetid://1316045217"
+    TooltipShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    TooltipShadow.ImageTransparency = 0.8
+    TooltipShadow.ScaleType = Enum.ScaleType.Slice
+    TooltipShadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    TooltipShadow.Size = UDim2.new(1, 10, 1, 10)
+    TooltipShadow.Position = UDim2.new(0, -5, 0, -5)
+    TooltipShadow.BackgroundTransparency = 1
+    TooltipShadow.ZIndex = 10000
+    TooltipShadow.Parent = TooltipFrame
+    
+    local TooltipText = Instance.new("TextLabel")
+    TooltipText.Name = "TooltipText"
+    TooltipText.Size = UDim2.new(1, -10, 1, -10)
+    TooltipText.Position = UDim2.new(0, 5, 0, 5)
+    TooltipText.BackgroundTransparency = 1
+    TooltipText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TooltipText.TextSize = 12
+    TooltipText.Font = Enum.Font.Gotham
+    TooltipText.TextWrapped = true
+    TooltipText.TextXAlignment = Enum.TextXAlignment.Left
+    TooltipText.TextYAlignment = Enum.TextYAlignment.Top
+    TooltipText.ZIndex = 10001
+    TooltipText.Parent = TooltipFrame
+    
+    local currentTooltip = nil
+    local tooltipConnection = nil
+    
+    function TooltipSystem:ShowTooltip(element, text)
+        if not Library.TooltipsEnabled then return end
+        if not text or text == "" then return end
+        
+        local function updateTooltip()
+            if not TooltipFrame or not TooltipFrame.Parent then return end
+            
+            local textSize = TextService:GetTextSize(text, 12, Enum.Font.Gotham, Vector2.new(190, math.huge))
+            local height = math.min(textSize.Y + 10, 150)
+            
+            TooltipFrame.Size = UDim2.new(0, 200, 0, height)
+            TooltipText.Text = text
+            
+            local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+            local screenSize = workspace.CurrentCamera.ViewportSize
+            
+            -- Posiciona o tooltip acima do cursor para evitar sobreposição com a UI
+            local xPos = math.clamp(mousePos.X + 20, 0, screenSize.X - TooltipFrame.AbsoluteSize.X - 10)
+            local yPos = math.clamp(mousePos.Y - TooltipFrame.AbsoluteSize.Y - 10, 0, screenSize.Y - TooltipFrame.AbsoluteSize.Y - 10)
+            
+            -- Se não couber acima, posiciona abaixo
+            if yPos < 0 then
+                yPos = math.clamp(mousePos.Y + 20, 0, screenSize.Y - TooltipFrame.AbsoluteSize.Y - 10)
+            end
+            
+            TooltipFrame.Position = UDim2.new(0, xPos, 0, yPos)
+            TooltipFrame.Visible = true
+        end
+        
+        if currentTooltip == element then return end
+        
+        if tooltipConnection then
+            tooltipConnection:Disconnect()
+        end
+        
+        currentTooltip = element
+        updateTooltip()
+        
+        tooltipConnection = RunService.Heartbeat:Connect(updateTooltip)
+    end
+    
+    function TooltipSystem:HideTooltip(element)
+        if currentTooltip == element then
+            currentTooltip = nil
+            if tooltipConnection then
+                tooltipConnection:Disconnect()
+                tooltipConnection = nil
+            end
+            TooltipFrame.Visible = false
+        end
+    end
+    
+    function TooltipSystem:AddTooltip(element, text)
+        if not element or not text then return end
+        
+        element.MouseEnter:Connect(function()
+            self:ShowTooltip(element, text)
+        end)
+        
+        element.MouseLeave:Connect(function()
+            self:HideTooltip(element)
+        end)
+    end
+    
+    function TooltipSystem:SetEnabled(enabled)
+        if not enabled then
+            self:HideTooltip(currentTooltip)
+        end
+    end
 end
 
 local function MakeResizable(frame, minSize, maxSize)
@@ -175,6 +343,217 @@ do
         end)
     end
 end
+
+-- 🎨 Funções do Sistema de Temas
+function Library:ApplyTheme(themeName)
+    if Library.Themes[themeName] then
+        Library.CurrentTheme = themeName
+        local theme = GetTheme()
+        
+        -- Aplicar tema a todas as janelas existentes
+        for _, windowData in ipairs(Library.Windows) do
+            local MainFrame = windowData.MainFrame
+            if MainFrame and MainFrame.Parent then
+                -- Atualizar cores principais
+                MainFrame.BackgroundColor3 = theme.Background
+                
+                local Header = MainFrame:FindFirstChild("Header")
+                if Header then 
+                    Header.BackgroundColor3 = theme.Primary 
+                end
+                
+                local Title = MainFrame:FindFirstChild("Header") and MainFrame.Header:FindFirstChildWhichIsA("TextLabel")
+                if Title then
+                    Title.TextColor3 = theme.Text
+                end
+                
+                local TabBar = MainFrame:FindFirstChild("TabContainer") and MainFrame.TabContainer:FindFirstChild("TabBar")
+                if TabBar then
+                    TabBar.BackgroundColor3 = theme.Secondary
+                end
+                
+                local Credit = MainFrame:FindFirstChildWhichIsA("TextLabel")
+                if Credit and string.find(Credit.Text, "xtel") then
+                    Credit.TextColor3 = Color3.fromRGB(130, 130, 140)
+                end
+                
+                -- Atualizar botões de tab
+                if TabBar then
+                    for _, child in ipairs(TabBar:GetChildren()) do
+                        if child:IsA("TextButton") then
+                            if child.BackgroundColor3 == Library.Themes["Dark"].Background then
+                                child.BackgroundColor3 = theme.Background
+                                child.TextColor3 = theme.Text
+                            else
+                                child.BackgroundColor3 = theme.Secondary
+                                child.TextColor3 = Color3.fromRGB(180, 180, 185)
+                            end
+                        end
+                    end
+                end
+                
+                -- Atualizar componentes dentro das tabs
+                local ContentContainer = MainFrame:FindFirstChild("TabContainer") and MainFrame.TabContainer:FindFirstChild("ContentContainer")
+                if ContentContainer then
+                    self:UpdateTabComponents(ContentContainer, theme)
+                end
+                
+                -- Atualizar resize handle
+                local ResizeHandle = MainFrame:FindFirstChild("ResizeHandle")
+                if ResizeHandle then
+                    ResizeHandle.BackgroundColor3 = theme.Primary
+                    ResizeHandle.TextColor3 = theme.Text
+                end
+            end
+        end
+        
+        Library:Notify("Tema Alterado", "Tema '" .. themeName .. "' aplicado com sucesso!", 2)
+        return true
+    else
+        warn("Tema '" .. themeName .. "' não encontrado!")
+        Library:Notify("Erro de Tema", "Tema '" .. themeName .. "' não encontrado!", 3)
+        return false
+    end
+end
+
+function Library:UpdateTabComponents(container, theme)
+    for _, tabContent in ipairs(container:GetChildren()) do
+        if tabContent:IsA("ScrollingFrame") then
+            for _, element in ipairs(tabContent:GetChildren()) do
+                -- Botões
+                if element:IsA("TextButton") and not element.Name:find("TabButton") then
+                    if element.BackgroundColor3 == Library.Themes["Dark"].Secondary then
+                        element.BackgroundColor3 = theme.Secondary
+                        element.TextColor3 = Color3.fromRGB(230, 230, 235)
+                    elseif element.BackgroundColor3 == Library.Themes["Dark"].Hover then
+                        element.BackgroundColor3 = theme.Hover
+                    end
+                    
+                    -- Botões coloridos mantêm suas cores, apenas atualizam texto
+                    if element.BackgroundColor3 ~= theme.Secondary and element.BackgroundColor3 ~= theme.Hover then
+                        element.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    end
+                end
+                
+                -- Toggles
+                if element:IsA("Frame") and element:FindFirstChildWhichIsA("TextButton") then
+                    local toggleBox = element:FindFirstChildWhichIsA("TextButton")
+                    if toggleBox then
+                        if toggleBox.BackgroundColor3 == Library.Themes["Dark"].Primary then
+                            toggleBox.BackgroundColor3 = theme.Primary
+                        elseif toggleBox.BackgroundColor3 == Color3.fromRGB(45, 45, 50) then
+                            toggleBox.BackgroundColor3 = theme.Secondary
+                        end
+                    end
+                    
+                    local label = element:FindFirstChildWhichIsA("TextLabel")
+                    if label then
+                        label.TextColor3 = Color3.fromRGB(230, 230, 235)
+                    end
+                end
+                
+                -- Sliders
+                if element:IsA("Frame") and element:FindFirstChild("Track") then
+                    local track = element:FindFirstChild("Track")
+                    if track then
+                        track.BackgroundColor3 = theme.Secondary
+                        
+                        local fill = track:FindFirstChildWhichIsA("Frame")
+                        if fill then
+                            fill.BackgroundColor3 = theme.Primary
+                        end
+                        
+                        local thumb = track:FindFirstChildWhichIsA("Frame")
+                        if thumb and thumb.Name ~= "Fill" then
+                            thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                        end
+                    end
+                    
+                    local valueLabel = element:FindFirstChildWhichIsA("TextLabel")
+                    if valueLabel and valueLabel.TextColor3 == Library.Themes["Dark"].Primary then
+                        valueLabel.TextColor3 = theme.Primary
+                    end
+                end
+                
+                -- Dropdowns
+                if element:IsA("Frame") and element:FindFirstChildWhichIsA("TextButton") then
+                    local dropFrame = element
+                    if dropFrame.BackgroundColor3 == Library.Themes["Dark"].Secondary then
+                        dropFrame.BackgroundColor3 = theme.Secondary
+                    end
+                    
+                    for _, child in ipairs(dropFrame:GetDescendants()) do
+                        if child:IsA("TextButton") and child.BackgroundColor3 == Color3.fromRGB(30, 30, 36) then
+                            child.BackgroundColor3 = theme.Secondary
+                        elseif child:IsA("TextButton") and child.BackgroundColor3 == Color3.fromRGB(40, 40, 46) then
+                            child.BackgroundColor3 = theme.Hover
+                        end
+                    end
+                end
+                
+                -- Seções
+                if element:IsA("Frame") and element.BackgroundColor3 == Color3.fromRGB(40, 40, 48) then
+                    element.BackgroundColor3 = theme.Hover
+                    
+                    local sectionTitle = element:FindFirstChildWhichIsA("TextLabel")
+                    if sectionTitle and sectionTitle.TextColor3 == Library.Themes["Dark"].Primary then
+                        sectionTitle.TextColor3 = theme.Primary
+                    end
+                end
+                
+                -- Inputs
+                if element:IsA("TextBox") then
+                    if element.BackgroundColor3 == Library.Themes["Dark"].Secondary then
+                        element.BackgroundColor3 = theme.Secondary
+                        element.TextColor3 = Color3.fromRGB(230, 230, 235)
+                        element.PlaceholderColor3 = Color3.fromRGB(120, 120, 125)
+                    end
+                end
+            end
+        end
+    end
+end
+
+function Library:SetTheme(themeName)
+    return Library:ApplyTheme(themeName)
+end
+
+function Library:GetAvailableThemes()
+    local themes = {}
+    for themeName, _ in pairs(Library.Themes) do
+        table.insert(themes, themeName)
+    end
+    return themes
+end
+
+function Library:AddCustomTheme(themeName, themeData)
+    if Library.Themes[themeName] then
+        warn("Tema '" .. themeName .. "' já existe!")
+        return false
+    end
+    
+    Library.Themes[themeName] = themeData
+    return true
+end
+
+-- 🔧 Funções do Sistema de Tooltips
+function Library:SetTooltipsEnabled(enabled)
+    Library.TooltipsEnabled = enabled
+    TooltipSystem:SetEnabled(enabled)
+    Library:Notify("Tooltips", enabled and "Tooltips ativados!" or "Tooltips desativados!", 2)
+end
+
+function Library:ToggleTooltips()
+    Library.TooltipsEnabled = not Library.TooltipsEnabled
+    TooltipSystem:SetEnabled(Library.TooltipsEnabled)
+    Library:Notify("Tooltips", Library.TooltipsEnabled and "Tooltips ativados!" or "Tooltips desativados!", 2)
+    return Library.TooltipsEnabled
+end
+
+function Library:AreTooltipsEnabled()
+    return Library.TooltipsEnabled
+end
+
 -- 🧩 Library (Enhanced)
 function Library:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
@@ -184,7 +563,7 @@ function Library:CreateWindow(title)
     ScreenGui.Parent = CoreGui
     local MainFrame = Instance.new("Frame")
     MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 450, 0, 300) -- Aumentei o tamanho padrão
+    MainFrame.Size = UDim2.new(0, 500, 0, 400) -- Aumentei para acomodar mais configurações
     MainFrame.Position = UDim2.new(0.05 + 0.02 * #Library.Windows, 0, 0.25 + 0.02 * #Library.Windows, 0)
     MainFrame.BackgroundColor3 = GetTheme().Background
     MainFrame.BorderSizePixel = 0
@@ -229,7 +608,7 @@ function Library:CreateWindow(title)
     TabBar.Name = "TabBar"
     TabBar.Size = UDim2.new(0, 120, 1, -20)
     TabBar.Position = UDim2.new(0, 0, 0, 0)
-    TabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    TabBar.BackgroundColor3 = GetTheme().Secondary
     TabBar.BorderSizePixel = 0
     TabBar.Parent = TabContainer
 
@@ -350,8 +729,15 @@ function Library:CreateWindow(title)
         local tab = {}
         local Content = contentFrame -- Content é o ScrollingFrame dentro da Tab
 
+        -- Função auxiliar para adicionar tooltip
+        local function AddTooltip(element, tooltip)
+            if tooltip and tooltip ~= "" then
+                TooltipSystem:AddTooltip(element, tooltip)
+            end
+        end
+
         -- Botão padrão
-        function tab:CreateButton(name, callback)
+        function tab:CreateButton(name, callback, tooltip)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = GetTheme().Secondary
@@ -374,10 +760,14 @@ function Library:CreateWindow(title)
             Button.MouseButton1Click:Connect(function()
                 if callback then callback() end
             end)
+            
+            AddTooltip(Button, tooltip)
+            
+            return Button
         end
 
         -- Toggle
-        function tab:CreateToggle(name, default, callback)
+        function tab:CreateToggle(name, default, callback, tooltip)
             local ToggleFrame = Instance.new("Frame")
             ToggleFrame.Size = UDim2.new(1, -10, 0, 26)
             ToggleFrame.BackgroundTransparency = 1
@@ -395,7 +785,7 @@ function Library:CreateWindow(title)
             local Box = Instance.new("TextButton")
             Box.Size = UDim2.new(0, 22, 0, 22)
             Box.Position = UDim2.new(1, -28, 0.5, -11)
-            Box.BackgroundColor3 = default and GetTheme().Primary or Color3.fromRGB(45, 45, 50)
+            Box.BackgroundColor3 = default and GetTheme().Primary or GetTheme().Secondary
             Box.Text = ""
             Box.AutoButtonColor = false
             Box.Parent = ToggleFrame
@@ -405,20 +795,23 @@ function Library:CreateWindow(title)
             local active = default or false
             Box.MouseButton1Click:Connect(function()
                 active = not active
-                CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)}, 0.15)
+                CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or GetTheme().Secondary}, 0.15)
                 callback(active)
             end)
+
+            AddTooltip(ToggleFrame, tooltip)
 
             return {
                 SetValue = function(value)
                     active = value
-                    CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or Color3.fromRGB(45, 45, 50)}, 0.15)
-                end
+                    CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or GetTheme().Secondary}, 0.15)
+                end,
+                Frame = ToggleFrame
             }
         end
 
         -- Slider
-        function tab:CreateSlider(name, min, max, default, callback)
+        function tab:CreateSlider(name, min, max, default, callback, tooltip)
             local SliderFrame = Instance.new("Frame")
             SliderFrame.Size = UDim2.new(1, -10, 0, 45)
             SliderFrame.BackgroundTransparency = 1
@@ -446,7 +839,7 @@ function Library:CreateWindow(title)
             local Track = Instance.new("Frame")
             Track.Size = UDim2.new(1, 0, 0, 4)
             Track.Position = UDim2.new(0, 0, 1, -12)
-            Track.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            Track.BackgroundColor3 = GetTheme().Secondary
             Track.BorderSizePixel = 0
             Track.Parent = SliderFrame
             local TrackCorner = Instance.new("UICorner")
@@ -495,10 +888,14 @@ function Library:CreateWindow(title)
                     update(input)
                 end
             end)
+            
+            AddTooltip(SliderFrame, tooltip)
+            
+            return SliderFrame
         end
 
         -- Dropdown (Seleção Única)
-        function tab:CreateDropdown(name, options, callback)
+        function tab:CreateDropdown(name, options, callback, tooltip)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
             DropFrame.BackgroundColor3 = GetTheme().Secondary
@@ -550,17 +947,17 @@ function Library:CreateWindow(title)
                 Opt.TextSize = 13
                 Opt.TextColor3 = Color3.fromRGB(200, 200, 205)
                 Opt.TextTruncate = Enum.TextTruncate.AtEnd
-                Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+                Opt.BackgroundColor3 = GetTheme().Secondary
                 Opt.BorderSizePixel = 0
                 Opt.AutoButtonColor = false
                 Opt.Parent = OptionsList
                 
                 Opt.MouseEnter:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(40, 40, 46)
+                    CreateTween(Opt, {BackgroundColor3 = GetTheme().Hover}, 0.15)
                 end)
                 
                 Opt.MouseLeave:Connect(function()
-                    Opt.BackgroundColor3 = Color3.fromRGB(30, 30, 36)
+                    CreateTween(Opt, {BackgroundColor3 = GetTheme().Secondary}, 0.15)
                 end)
                 
                 Opt.MouseButton1Click:Connect(function()
@@ -583,10 +980,14 @@ function Library:CreateWindow(title)
                     Arrow.Text = "▼"
                 end
             end)
+            
+            AddTooltip(DropFrame, tooltip)
+            
+            return DropFrame
         end
 
         -- Multi-Dropdown (Seleção Múltipla)
-        function tab:CreateMultiDropdown(name, options, callback)
+        function tab:CreateMultiDropdown(name, options, callback, tooltip)
             local DropFrame = Instance.new("Frame")
             DropFrame.Size = UDim2.new(1, -10, 0, 30)
             DropFrame.BackgroundColor3 = GetTheme().Secondary
@@ -650,7 +1051,7 @@ function Library:CreateWindow(title)
                 local Checkbox = Instance.new("TextButton")
                 Checkbox.Size = UDim2.new(0, 20, 0, 20)
                 Checkbox.Position = UDim2.new(0, 5, 0.5, -10)
-                Checkbox.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                Checkbox.BackgroundColor3 = GetTheme().Secondary
                 Checkbox.Text = ""
                 Checkbox.AutoButtonColor = false
                 Checkbox.Parent = OptionFrame
@@ -687,7 +1088,7 @@ function Library:CreateWindow(title)
                     if isSelected then
                         table.remove(selected, isSelected)
                         Checkmark.Visible = false
-                        CreateTween(Checkbox, {BackgroundColor3 = Color3.fromRGB(45, 45, 50)}, 0.15)
+                        CreateTween(Checkbox, {BackgroundColor3 = GetTheme().Secondary}, 0.15)
                     else
                         table.insert(selected, option)
                         Checkmark.Visible = true
@@ -721,6 +1122,7 @@ function Library:CreateWindow(title)
             end)
             
             updateLabel()
+            AddTooltip(DropFrame, tooltip)
             
             return {
                 SetValues = function(values)
@@ -735,7 +1137,7 @@ function Library:CreateWindow(title)
                             if checkmark then
                                 local isSelected = table.find(selected, optionText)
                                 checkmark.Visible = isSelected ~= nil
-                                checkbox.BackgroundColor3 = isSelected and GetTheme().Primary or Color3.fromRGB(45, 45, 50)
+                                checkbox.BackgroundColor3 = isSelected and GetTheme().Primary or GetTheme().Secondary
                             end
                         end
                     end
@@ -744,12 +1146,13 @@ function Library:CreateWindow(title)
                 
                 GetValues = function()
                     return selected
-                end
+                end,
+                Frame = DropFrame
             }
         end
 
         -- Input de texto
-        function tab:CreateTextbox(name, placeholder, callback)
+        function tab:CreateTextbox(name, placeholder, callback, tooltip)
             local TextFrame = Instance.new("Frame")
             TextFrame.Size = UDim2.new(1, -10, 0, 55)
             TextFrame.BackgroundTransparency = 1
@@ -789,10 +1192,14 @@ function Library:CreateWindow(title)
                     Input.Text = ""
                 end
             end)
+            
+            AddTooltip(TextFrame, tooltip)
+            
+            return TextFrame
         end
 
         -- Label
-        function tab:CreateLabel(text)
+        function tab:CreateLabel(text, tooltip)
             local Label = Instance.new("TextLabel")
             Label.Size = UDim2.new(1, -10, 0, 20)
             Label.Text = text
@@ -805,10 +1212,13 @@ function Library:CreateWindow(title)
             Label.BackgroundTransparency = 1
             Label.Parent = Content
 
+            AddTooltip(Label, tooltip)
+
             return {
                 SetText = function(newText)
                     Label.Text = newText
-                end
+                end,
+                Label = Label
             }
         end
 
@@ -816,13 +1226,15 @@ function Library:CreateWindow(title)
         function tab:CreateSeparator()
             local Separator = Instance.new("Frame")
             Separator.Size = UDim2.new(1, -10, 0, 1)
-            Separator.BackgroundColor3 = Color3.fromRGB(50, 50, 58)
+            Separator.BackgroundColor3 = GetTheme().Border
             Separator.BorderSizePixel = 0
             Separator.Parent = Content
+            
+            return Separator
         end
 
         -- Keybind
-        function tab:CreateKeybind(name, defaultKey, callback)
+        function tab:CreateKeybind(name, defaultKey, callback, tooltip)
             local KeyFrame = Instance.new("Frame")
             KeyFrame.Size = UDim2.new(1, -10, 0, 26)
             KeyFrame.BackgroundTransparency = 1
@@ -840,7 +1252,7 @@ function Library:CreateWindow(title)
             local KeyButton = Instance.new("TextButton")
             KeyButton.Size = UDim2.new(0, 70, 0, 22)
             KeyButton.Position = UDim2.new(1, -75, 0.5, -11)
-            KeyButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            KeyButton.BackgroundColor3 = GetTheme().Secondary
             KeyButton.Text = defaultKey.Name
             KeyButton.Font = Enum.Font.GothamBold
             KeyButton.TextSize = 12
@@ -863,17 +1275,21 @@ function Library:CreateWindow(title)
                         currentKey = input.KeyCode
                         KeyButton.Text = currentKey.Name
                         binding = false
-                        CreateTween(KeyButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 50)}, 0.15)
-                        NotificationSystem:Notify(name, "Tecla alterada para: " .. currentKey.Name)
+                        CreateTween(KeyButton, {BackgroundColor3 = GetTheme().Secondary}, 0.15)
+                        Library:Notify(name, "Tecla alterada para: " .. currentKey.Name)
                     end
                 elseif not processed and input.KeyCode == currentKey then
                     callback()
                 end
             end)
+            
+            AddTooltip(KeyFrame, tooltip)
+            
+            return KeyFrame
         end
 
         -- Color Picker
-        function tab:CreateColorPicker(name, defaultColor, callback)
+        function tab:CreateColorPicker(name, defaultColor, callback, tooltip)
             local ColorFrame = Instance.new("Frame")
             ColorFrame.Size = UDim2.new(1, -10, 0, 26)
             ColorFrame.BackgroundTransparency = 1
@@ -905,15 +1321,19 @@ function Library:CreateWindow(title)
                 local newColor = Color3.fromRGB(r, g, b)
                 ColorBox.BackgroundColor3 = newColor
                 callback(newColor)
-                NotificationSystem:Notify(name, string.format("RGB(%d, %d, %d)", r, g, b))
+                Library:Notify(name, string.format("RGB(%d, %d, %d)", r, g, b))
             end)
+            
+            AddTooltip(ColorFrame, tooltip)
+            
+            return ColorFrame
         end
 
         -- Seção
-        function tab:CreateSection(title)
+        function tab:CreateSection(title, tooltip)
             local SectionFrame = Instance.new("Frame")
             SectionFrame.Size = UDim2.new(1, -10, 0, 35)
-            SectionFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 48)
+            SectionFrame.BackgroundColor3 = GetTheme().Hover
             SectionFrame.BorderSizePixel = 0
             SectionFrame.Parent = Content
             local SectionCorner = Instance.new("UICorner")
@@ -930,10 +1350,14 @@ function Library:CreateWindow(title)
             SectionTitle.TextTruncate = Enum.TextTruncate.AtEnd
             SectionTitle.BackgroundTransparency = 1
             SectionTitle.Parent = SectionFrame
+            
+            AddTooltip(SectionFrame, tooltip)
+            
+            return SectionFrame
         end
 
         -- Botão Colorido
-        function tab:CreateColorButton(name, color, callback)
+        function tab:CreateColorButton(name, color, callback, tooltip)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = color
@@ -963,10 +1387,14 @@ function Library:CreateWindow(title)
             Button.MouseButton1Click:Connect(function()
                 if callback then callback() end
             end)
+            
+            AddTooltip(Button, tooltip)
+            
+            return Button
         end
 
         -- Botão com Confirmação
-        function tab:CreateConfirmButton(name, confirmText, callback)
+        function tab:CreateConfirmButton(name, confirmText, callback, tooltip)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
@@ -1000,10 +1428,14 @@ function Library:CreateWindow(title)
                     confirming = false
                 end
             end)
+            
+            AddTooltip(Button, tooltip)
+            
+            return Button
         end
 
         -- Info Box
-        function tab:CreateInfoBox(title, text, color)
+        function tab:CreateInfoBox(title, text, color, tooltip)
             local InfoFrame = Instance.new("Frame")
             InfoFrame.Size = UDim2.new(1, -10, 0, 50)
             InfoFrame.BackgroundColor3 = color or Color3.fromRGB(40, 100, 160)
@@ -1034,10 +1466,14 @@ function Library:CreateWindow(title)
             InfoText.TextTruncate = Enum.TextTruncate.AtEnd
             InfoText.BackgroundTransparency = 1
             InfoText.Parent = InfoFrame
+            
+            AddTooltip(InfoFrame, tooltip)
+            
+            return InfoFrame
         end
 
         -- Botão de Copiar
-        function tab:CreateCopyButton(name, textToCopy)
+        function tab:CreateCopyButton(name, textToCopy, tooltip)
             local Button = Instance.new("TextButton")
             Button.Size = UDim2.new(1, -10, 0, 30)
             Button.BackgroundColor3 = GetTheme().Secondary
@@ -1059,8 +1495,144 @@ function Library:CreateWindow(title)
             end)
             Button.MouseButton1Click:Connect(function()
                 setclipboard(textToCopy)
-                NotificationSystem:Notify("Copiado!", textToCopy)
+                Library:Notify("Copiado!", textToCopy)
             end)
+            
+            AddTooltip(Button, tooltip)
+            
+            return Button
+        end
+
+        -- Theme Selector
+        function tab:CreateThemeSelector(tooltip)
+            local availableThemes = Library:GetAvailableThemes()
+            local ThemeFrame = Instance.new("Frame")
+            ThemeFrame.Size = UDim2.new(1, -10, 0, 50)
+            ThemeFrame.BackgroundTransparency = 1
+            ThemeFrame.Parent = Content
+            
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, 0, 0, 20)
+            Label.Text = "🎨 Tema da Interface"
+            Label.Font = Enum.Font.GothamBold
+            Label.TextSize = 14
+            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.BackgroundTransparency = 1
+            Label.Parent = ThemeFrame
+            
+            local ThemeContainer = Instance.new("Frame")
+            ThemeContainer.Size = UDim2.new(1, 0, 0, 25)
+            ThemeContainer.Position = UDim2.new(0, 0, 0, 25)
+            ThemeContainer.BackgroundTransparency = 1
+            ThemeContainer.Parent = ThemeFrame
+            
+            local UIListLayout = Instance.new("UIListLayout")
+            UIListLayout.FillDirection = Enum.FillDirection.Horizontal
+            UIListLayout.Padding = UDim.new(0, 5)
+            UIListLayout.Parent = ThemeContainer
+            
+            for _, themeName in ipairs(availableThemes) do
+                local theme = Library.Themes[themeName]
+                local ThemeButton = Instance.new("TextButton")
+                ThemeButton.Size = UDim2.new(0, 60, 1, 0)
+                ThemeButton.BackgroundColor3 = theme.Primary
+                ThemeButton.Text = themeName
+                ThemeButton.Font = Enum.Font.GothamBold
+                ThemeButton.TextSize = 11
+                ThemeButton.TextColor3 = theme.Text
+                ThemeButton.AutoButtonColor = false
+                ThemeButton.Parent = ThemeContainer
+                
+                local ThemeCorner = Instance.new("UICorner")
+                ThemeCorner.CornerRadius = UDim.new(0, 4)
+                ThemeCorner.Parent = ThemeButton
+                
+                ThemeButton.MouseEnter:Connect(function()
+                    CreateTween(ThemeButton, {BackgroundColor3 = theme.Accent}, 0.15)
+                end)
+                
+                ThemeButton.MouseLeave:Connect(function()
+                    if Library.CurrentTheme == themeName then
+                        CreateTween(ThemeButton, {BackgroundColor3 = theme.Primary}, 0.15)
+                    else
+                        CreateTween(ThemeButton, {BackgroundColor3 = theme.Primary}, 0.15)
+                    end
+                end)
+                
+                ThemeButton.MouseButton1Click:Connect(function()
+                    Library:SetTheme(themeName)
+                    -- Atualizar aparência dos botões
+                    for _, btn in ipairs(ThemeContainer:GetChildren()) do
+                        if btn:IsA("TextButton") then
+                            local btnTheme = Library.Themes[btn.Text]
+                            if btn.Text == themeName then
+                                CreateTween(btn, {BackgroundColor3 = btnTheme.Primary}, 0.15)
+                            else
+                                CreateTween(btn, {BackgroundColor3 = btnTheme.Primary}, 0.15)
+                            end
+                        end
+                    end
+                end)
+                
+                -- Destacar o tema atual
+                if Library.CurrentTheme == themeName then
+                    CreateTween(ThemeButton, {BackgroundColor3 = theme.Primary}, 0.15)
+                end
+            end
+            
+            AddTooltip(ThemeFrame, tooltip)
+            
+            return ThemeFrame
+        end
+
+        -- Toggle para Tooltips
+        function tab:CreateTooltipToggle(default, callback, tooltip)
+            local ToggleFrame = Instance.new("Frame")
+            ToggleFrame.Size = UDim2.new(1, -10, 0, 26)
+            ToggleFrame.BackgroundTransparency = 1
+            ToggleFrame.Parent = Content
+            local Label = Instance.new("TextLabel")
+            Label.Size = UDim2.new(1, -40, 1, 0)
+            Label.Text = "Tooltips"
+            Label.Font = Enum.Font.Gotham
+            Label.TextSize = 14
+            Label.TextColor3 = Color3.fromRGB(230, 230, 235)
+            Label.TextXAlignment = Enum.TextXAlignment.Left
+            Label.TextTruncate = Enum.TextTruncate.AtEnd
+            Label.BackgroundTransparency = 1
+            Label.Parent = ToggleFrame
+            local Box = Instance.new("TextButton")
+            Box.Size = UDim2.new(0, 22, 0, 22)
+            Box.Position = UDim2.new(1, -28, 0.5, -11)
+            Box.BackgroundColor3 = default and GetTheme().Primary or GetTheme().Secondary
+            Box.Text = ""
+            Box.AutoButtonColor = false
+            Box.Parent = ToggleFrame
+            local Corner = Instance.new("UICorner")
+            Corner.CornerRadius = UDim.new(0, 4)
+            Corner.Parent = Box
+            local active = default or false
+            
+            Box.MouseButton1Click:Connect(function()
+                active = not active
+                CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or GetTheme().Secondary}, 0.15)
+                Library:SetTooltipsEnabled(active)
+                if callback then
+                    callback(active)
+                end
+            end)
+
+            AddTooltip(ToggleFrame, tooltip)
+
+            return {
+                SetValue = function(value)
+                    active = value
+                    CreateTween(Box, {BackgroundColor3 = active and GetTheme().Primary or GetTheme().Secondary}, 0.15)
+                    Library:SetTooltipsEnabled(active)
+                end,
+                Frame = ToggleFrame
+            }
         end
 
         return tab
@@ -1072,7 +1644,7 @@ function Library:CreateWindow(title)
         local TabButton = Instance.new("TextButton")
         TabButton.Name = name .. "TabButton"
         TabButton.Size = UDim2.new(1, -10, 0, 30)
-        TabButton.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+        TabButton.BackgroundColor3 = GetTheme().Secondary
         TabButton.TextColor3 = Color3.fromRGB(180, 180, 185)
         TabButton.Font = Enum.Font.GothamBold
         TabButton.TextSize = 15
@@ -1122,7 +1694,7 @@ function Library:CreateWindow(title)
             -- Desativa a aba atual
             if CurrentTab and Tabs[CurrentTab] then
                 Tabs[CurrentTab].Content.Visible = false
-                Tabs[CurrentTab].Button.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+                Tabs[CurrentTab].Button.BackgroundColor3 = GetTheme().Secondary
                 Tabs[CurrentTab].Button.TextColor3 = Color3.fromRGB(180, 180, 185)
             end
             -- Ativa a nova aba
@@ -1144,11 +1716,11 @@ function Library:CreateWindow(title)
     end
 
     -- Cria as funções de componente para retornar um erro ou aviso se chamadas na Window diretamente
-    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateMultiDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton"}
+    local componentNames = {"CreateButton", "CreateToggle", "CreateSlider", "CreateDropdown", "CreateMultiDropdown", "CreateTextbox", "CreateLabel", "CreateSeparator", "CreateKeybind", "CreateColorPicker", "CreateSection", "CreateColorButton", "CreateConfirmButton", "CreateInfoBox", "CreateCopyButton", "CreateThemeSelector", "CreateTooltipToggle"}
     for _, compName in ipairs(componentNames) do
         window[compName] = function()
             warn("🚨 ERRO: Componente '" .. compName .. "' deve ser criado dentro de uma Tab. Use: window:CreateTab('NomeDaTab'):" .. compName .. "()")
-            NotificationSystem:Notify("Erro de Script", "Componente deve ser criado dentro de uma Tab!", 5)
+            Library:Notify("Erro de Script", "Componente deve ser criado dentro de uma Tab!", 5)
         end
     end
 
@@ -1160,6 +1732,29 @@ function Library:Notify(title, message, duration)
     if NotificationSystem and NotificationSystem.Notify then
         NotificationSystem:Notify(title, message, duration)
     end
+end
+
+-- Função para adicionar tooltip a qualquer elemento
+function Library:AddTooltip(element, text)
+    TooltipSystem:AddTooltip(element, text)
+end
+
+-- Funções para controlar tooltips
+function Library:SetTooltipsEnabled(enabled)
+    Library.TooltipsEnabled = enabled
+    TooltipSystem:SetEnabled(enabled)
+    Library:Notify("Tooltips", enabled and "Tooltips ativados!" or "Tooltips desativados!", 2)
+end
+
+function Library:ToggleTooltips()
+    Library.TooltipsEnabled = not Library.TooltipsEnabled
+    TooltipSystem:SetEnabled(Library.TooltipsEnabled)
+    Library:Notify("Tooltips", Library.TooltipsEnabled and "Tooltips ativados!" or "Tooltips desativados!", 2)
+    return Library.TooltipsEnabled
+end
+
+function Library:AreTooltipsEnabled()
+    return Library.TooltipsEnabled
 end
 
 return Library
